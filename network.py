@@ -6,7 +6,7 @@ import torch.nn as nn
 
 import numpy as np
 
-
+EPS=1e-10 # log offset to avoid log(0)
 class InterpWrapper(nn.Module):
     def __init__(self,in_channels,out_channels,PAR):
         super(InterpWrapper,self).__init__()
@@ -41,7 +41,7 @@ class StrideConvWrapper(nn.Module):
     def __init__(self,channels,PAR):
         super(StrideConvWrapper,self).__init__()
         
-        self.pool=nn.Conv3d(channels, channels, PAR['DownConvKernel'],stride=PAR['poolshape'])
+        self.pool=nn.Conv3d(channels, channels, PAR['DownConvKernel'],stride=PAR['PoolShape'])
     def forward(self,input):
         return self.pool(input)
 
@@ -79,8 +79,11 @@ DEF_yolo={'FilterSize':3,
           'Upsample':TransposeWrapper,
           'InterpMode':'trilinear',
           'DownConvKernel':3,
+          'WDecay':0.00,
           'TransposeSize':4,
           'TransposeStride':2,
+          'PositiveWeight':100,
+          'CoordsWeight':1
           }
 # box da 48?
 
@@ -506,18 +509,22 @@ class YoloRP(nn.Module):
         self.mods.append(PARAMS['Downsample'](PARAMS['FiltersNumHighRes'][0],PAR=PARAMS))
         
         for i in range(1,len(PARAMS['FiltersNumHighRes'])):
-            self.mods.append(OneConv(PARAMS['FiltersNumHighRes'][i-1],PARAMS['FiltersNumHighRes'][i],PAR=PARAMS,Inplace=True))
+            self.mods.append(NoSkipConvBlock(PARAMS['FiltersNumHighRes'][i-1],PARAMS['FiltersNumHighRes'][i],PAR=PARAMS,Inplace=True))
             self.mods.append(PARAMS['Downsample'](PARAMS['FiltersNumHighRes'][i],PAR=PARAMS))
         
         
-        self.mods.append(PARAMS['Conv'](PARAMS['FiltersNumHighRes'][i],4,1))
+        self.objectness=PARAMS['Conv'](PARAMS['FiltersNumHighRes'][i],1,1)
+        self.coords=PARAMS['Conv'](PARAMS['FiltersNumHighRes'][i],3,1)
+        
+        self.sigmoid1=nn.Sigmoid()
+        self.sigmoid2=nn.Sigmoid()
         
     def forward(self,x):
-        
+        x=x.cuda()
         for mod in self.mods:
             x=mod(x)
             
-        return x
+        return self.sigmoid1(self.objectness(x)), self.sigmoid2(self.coords(x))
 
 class TruthPooler(nn.Module):
     def __init__(self,PARAMS=DEF_yolo):
@@ -533,6 +540,68 @@ class TruthPooler(nn.Module):
             x=mod(x)
         
         return x
+
+class CoordPooler(nn.Module):
+    def __init__(self,PARAMS=DEF_yolo):
+        super(CoordPooler,self).__init__()
+        
+        self.mods=nn.ModuleList()
+        
+        for k in range(len(PARAMS['FiltersNumHighRes'])):
+            self.mods.append(nn.AvgPool3d(PARAMS['PoolShape']))
+        
+    def forward(self,x):
+        for mod in self.mods:
+            x=mod(x)
+        
+        return x
+    
+class YoLoss(nn.Module):
+    def __init__(self,PARAMS):
+        super(YoLoss,self).__init__()
+        
+        self.TP=TruthPooler(PARAMS)
+        self.CP=CoordPooler(PARAMS)
+        
+        self.weight=PARAMS['PositiveWeight']
+        self.cweight=PARAMS['CoordsWeight']
+        
+    def forward(self,objectness,coords,labels,truecoords):
+        objectness=objectness.cuda()
+        coords=coords.cuda()
+        labels=labels.cuda()
+        truecoords=truecoords.cuda()
+        
+        
+        GT=self.TP(labels)
+        truecoords=self.TP(truecoords)
+        
+        
+        mse=(coords-truecoords)*GT
+        mse=torch.mean(mse*mse)*self.cweight
+        
+        
+        x=objectness
+        # print(GT.shape,'GT')
+        # print(x.shape,'x')
+        # print(EPS)
+        
+        
+        W=GT*self.weight
+        loss_object= GT*torch.log(x+EPS)+(1-GT)*torch.log(1-x+EPS)
+        loss_object*= W
+        loss_object=torch.mean(loss_object)
+        
+        # loss_object=torch.mean((1-GT)*x) + torch.mean((GT-x)*GT)*self.weight
+        
+        
+        
+        loss=torch.mean(loss_object) + mse
+        return loss
+        
+        
+        
+        
 
 
 # TheBigVol=np.random.random((1,2,560,560,140))
