@@ -366,6 +366,7 @@ class U_Net_Like(nn.Module):
         
         
         self.Classifier=PARAMS['Conv'](PARAMS['Categories']*len(PARAMS['FiltersDecoder']),PARAMS['Categories'],1) #classifier layer
+        self.softmax=nn.Softmax(dim=1)
             
             
     def forward(self,MRI_high,MRI_low):
@@ -407,6 +408,8 @@ class U_Net_Like(nn.Module):
         cat=torch.cat([denseA[0],denseB[0],Unpool[1]],dim=1)
         decoder[0] = self.decoder['Dense'+str(0)](cat)
         side.append(self.side[str(0)](decoder[0],MRI_high.size()))
+        for k in range(3):
+            side[k]=self.softmax(side[k])
         
         Combine=self.Classifier(torch.cat(side,dim=1))
         
@@ -466,6 +469,7 @@ class CascadedDecoder(nn.Module):
         self.decoder['Intermediate 0']=PARAMS['Conv'](int(PARAMS['FiltersDecoder'][2]+PARAMS['FiltersNumHighRes'][0]+PARAMS['FiltersNumLowRes'][0]),int(PARAMS['Categories']),PARAMS['FilterSize'],padding=FindPad(PARAMS['FilterSize']))
         
         self.Classifier=PARAMS['Conv'](PARAMS['Categories']*3,PARAMS['Categories'],1)
+        self.softmax=nn.Softmax(dim=1)
         
     def forward(self,MRI_high,MRI_low):
         
@@ -492,6 +496,9 @@ class CascadedDecoder(nn.Module):
         side=[self.decoder['Intermediate 0'](torch.cat([E0,D1],dim=1)),
               self.decoder['Intermediate 1'](D1),
               self.decoder['Intermediate 2'](D2_b)]
+        
+        for k in range(3):
+            side[k]=self.softmax(side[k])
         
         Combine=self.Classifier(torch.cat(side,dim=1))
         

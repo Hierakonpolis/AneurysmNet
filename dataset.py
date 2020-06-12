@@ -175,7 +175,9 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
         hea=TOF.header
         aff=TOF.affine
         LAB=np.round(LAB)
-        TOF=TOF.get_fdata()
+        TOF=normalize(TOF.get_fdata())
+        MRI=normalize(MRI)
+        
         connected_components=label(LAB)
         
         if np.any(LAB>0): 
@@ -238,6 +240,32 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
             datalist.append(S)
     pickle.dump(datalist,open(outlist,'wb'))
 
+def AddPatch(sampledict):
+    out={}
+    LAB=nib.load(sampledict['labels']).get_fdata()
+    shape=[1]+list(LAB.shape)
+    LAB=LAB.reshape(shape)
+    
+    labels=np.zeros([3]+list(LAB.shape))
+    labels[0,:,:,:][LAB==0]=1
+    labels[1,:,:,:][LAB==1]=1
+    labels[2,:,:,:][LAB==2]=1
+    
+    MRI_HD=nib.load(sampledict['struct']).get_fdata().reshape(shape)
+    MRI_LD=nib.load(sampledict['structB']).get_fdata().reshape(shape)
+    
+    TOF_HD=nib.load(sampledict['TOF']).get_fdata().reshape(shape)
+    TOF_LD=nib.load(sampledict['TOFB']).get_fdata().reshape(shape)
+    
+    out['HD']=np.concatenate([MRI_HD,TOF_HD],axis=0)
+    out['LD']=np.concatenate([MRI_LD,TOF_LD],axis=0)
+    
+    out['labels']=labels
+    
+    return out
+    
+
+
 def YourFriendlyResizer(datapath,standardsize=560):
     """
     560 scelto per pixdim: 1024*0.1953125/0.35714287
@@ -297,7 +325,25 @@ class YoloDataset(Dataset):
             sample=self.transforms(sample)
         
         return sample
+
+class PatchesDataset(Dataset):
+    def __init__(self,patchesroot,databoxfile,transforms=None):
+        self.dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
+        self.path=patchesroot
+    
+    def __len__(self):
+        return len(self.dataset)
+    
+    def __getitem__(self,idx):
+        sample=AddPatch(self.dataset[idx])
         
+        if self.transforms:
+            sample=self.transforms(sample)
+        
+        return sample
+        
+        
+
 class Shift():
     """
     
