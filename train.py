@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-import torch, pickle, os, torchvision
+import torch, pickle, os, torchvision, sys
 from models import Segmentation
 import numpy as np
 from network import CascadedDecoder, U_Net_Like, DEF_PARAMS
@@ -12,6 +12,11 @@ dataroot='/media/Olowoo/ADAMboxes'
 datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
 name='testrun'
+
+dataroot='/scratch/project_2003143/patches64'
+saveroot='/projappl/project_2003143'
+if len(sys.argv)>1:
+    dataroot=sys.argv[1]
 # groupfile='groups.p'
 
 saveprogress=os.path.join(saveroot,name+'_prog.pth')
@@ -19,11 +24,11 @@ savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.1
-Bsize=1
+Bsize=8
 workers=10
-MaxEpochs=10
+MaxEpochs=2
 Patience=100
-MaxTime=12*60*60
+MaxTime=np.inf
 
 
 # shift=D.Shift([40,15,0],probability=0.5,order={'sample':3,'labels':0})
@@ -39,7 +44,7 @@ train_idxs, test_idxs = train_test_split(np.arange(len(dataset)), test_size=test
 trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(train_idxs),num_workers=workers)
 testloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(test_idxs),num_workers=workers)
 
-Model=Segmentation(CascadedDecoder,
+Model=Segmentation(U_Net_Like,
                    savefile=None,
                    parameters=DEF_PARAMS,
                    trainset=train_idxs,

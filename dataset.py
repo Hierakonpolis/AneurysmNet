@@ -240,27 +240,27 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
             datalist.append(S)
     pickle.dump(datalist,open(outlist,'wb'))
 
-def AddPatch(sampledict):
+def AddPatch(sampledict,root):
     out={}
-    LAB=nib.load(sampledict['labels']).get_fdata()
+    LAB=nib.load(os.path.join(root,sampledict['labels'])).get_fdata()
     shape=[1]+list(LAB.shape)
-    LAB=LAB.reshape(shape)
     
     labels=np.zeros([3]+list(LAB.shape))
     labels[0,:,:,:][LAB==0]=1
     labels[1,:,:,:][LAB==1]=1
     labels[2,:,:,:][LAB==2]=1
     
-    MRI_HD=nib.load(sampledict['struct']).get_fdata().reshape(shape)
-    MRI_LD=nib.load(sampledict['structB']).get_fdata().reshape(shape)
+    MRI_HD=nib.load(os.path.join(root,sampledict['struct'])).get_fdata().reshape(shape)
+    MRI_LD=nib.load(os.path.join(root,sampledict['structB'])).get_fdata().reshape(shape)
     
-    TOF_HD=nib.load(sampledict['TOF']).get_fdata().reshape(shape)
-    TOF_LD=nib.load(sampledict['TOFB']).get_fdata().reshape(shape)
+    TOF_HD=nib.load(os.path.join(root,sampledict['TOF'])).get_fdata().reshape(shape)
+    TOF_LD=nib.load(os.path.join(root,sampledict['TOFB'])).get_fdata().reshape(shape)
     
     out['HD']=np.concatenate([MRI_HD,TOF_HD],axis=0)
     out['LD']=np.concatenate([MRI_LD,TOF_LD],axis=0)
     
     out['labels']=labels
+    
     
     return out
     
@@ -330,12 +330,12 @@ class PatchesDataset(Dataset):
     def __init__(self,patchesroot,databoxfile,transforms=None):
         self.dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
         self.path=patchesroot
-    
+        self.transforms=transforms
     def __len__(self):
         return len(self.dataset)
     
     def __getitem__(self,idx):
-        sample=AddPatch(self.dataset[idx])
+        sample=AddPatch(self.dataset[idx],self.path)
         
         if self.transforms:
             sample=self.transforms(sample)
@@ -422,6 +422,7 @@ class ToTensor():
         # print('ToTensor')
         for key in self.order:
             sample[key]=torch.from_numpy(sample[key]).float()#.to(self.device)
+            
         
         return sample
     

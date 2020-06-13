@@ -215,13 +215,13 @@ class Segmentation():
             self.opt['testset']=testset
             self.opt['Epoch']=0
             self.opt['TrainingLoss']=[]
-            self.opt['Dices']=[]
+            self.opt['TestDices']=[]
             self.opt['TestLoss']=[]
             self.opt['TotalTime']=0
             self.opt['BestLoss']=np.inf
             self.opt['BestLossEpoch']=0
             
-            
+            self.network=network(self.opt['PAR']).to(self.opt['device'])
             self.optimizer=RAdam(self.network.parameters(),weight_decay=self.opt['PAR']['WDecay'])
             
     
@@ -287,7 +287,9 @@ class Segmentation():
         
         
         self.opt['TestLoss'].append((self.opt['Epoch'],np.mean(losses)))
+        self.opt['TestDices'].append((self.opt['Epoch'],dices))
         print(flush=True)
+        print('Test set Dices:',dices,flush=True)
 
         return np.mean(losses)
     
@@ -307,7 +309,7 @@ class Segmentation():
             trainloss = self.train_one_epoch(train_dataloader)
             print('Training set running mean loss: ',trainloss,flush=True)
             
-            testloss=self.false_pos_eval(test_dataloader)
+            testloss=self.test(test_dataloader)
             print('Test set loss: ',testloss,flush=True)
             self.opt['TotalTime'] += time.time()-start
             
@@ -319,6 +321,7 @@ class Segmentation():
             self.save(saveprogress)
             
     def loss(self,sidebranches,output,GT):
+        GT=GT.to(self.opt['device'])
         loss=DiceLoss(GT,output)
         for x in sidebranches:
             loss+=DiceLoss(GT,x)

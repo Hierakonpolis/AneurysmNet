@@ -46,9 +46,9 @@ class StrideConvWrapper(nn.Module):
         return self.pool(input)
 
 DEF_PARAMS={'FilterSize':3,
-            'FiltersNumHighRes':np.array([8, 16, 32]),
-            'FiltersNumLowRes':np.array([16, 32, 64]),
-            'FiltersDecoder':np.array([16, 32, 64]),
+            'FiltersNumHighRes':np.array([64, 64, 64]),
+            'FiltersNumLowRes':np.array([64, 64, 64]),
+            'FiltersDecoder':np.array([64, 64, 64]),
             'Categories':int(3), 
             'Activation':nn.LeakyReLU, 
             'InblockSkip':False,
@@ -57,9 +57,10 @@ DEF_PARAMS={'FilterSize':3,
             'BNorm':nn.BatchNorm3d,
             'Conv':nn.Conv3d,
             'Downsample':PoolWrapper,
-            'Upsample':TransposeWrapper,
+            'Upsample':InterpWrapper,
             'InterpMode':'trilinear',
             'DownConvKernel':3,
+            'WDecay':0,
             'TransposeSize':4,
             'TransposeStride':2,
             }
@@ -377,8 +378,8 @@ class U_Net_Like(nn.Module):
         decoder={}
         Unpool={}
         
-        denseA[0] = self.encoder['DenseHigh'+str(0)](MRI_high)
-        denseB[0] = self.encoder['DenseLow'+str(0)](MRI_low)
+        denseA[0] = self.encoder['DenseHigh'+str(0)](MRI_high.cuda())
+        denseB[0] = self.encoder['DenseLow'+str(0)](MRI_low.cuda())
         
         
         
@@ -411,7 +412,7 @@ class U_Net_Like(nn.Module):
         for k in range(3):
             side[k]=self.softmax(side[k])
         
-        Combine=self.Classifier(torch.cat(side,dim=1))
+        Combine=self.softmax(self.Classifier(torch.cat(side,dim=1)))
         
         return side, Combine
 
@@ -473,8 +474,8 @@ class CascadedDecoder(nn.Module):
         
     def forward(self,MRI_high,MRI_low):
         
-        E0_h=self.encoder['Dense High 0'](MRI_high)
-        E0_l=self.encoder['Dense Low 0'](MRI_low)
+        E0_h=self.encoder['Dense High 0'](MRI_high.cuda())
+        E0_l=self.encoder['Dense Low 0'](MRI_low.cuda())
         
         E0=torch.cat([E0_h,E0_l],dim=1)
         
@@ -500,7 +501,7 @@ class CascadedDecoder(nn.Module):
         for k in range(3):
             side[k]=self.softmax(side[k])
         
-        Combine=self.Classifier(torch.cat(side,dim=1))
+        Combine=self.softmax(self.Classifier(torch.cat(side,dim=1)))
         
         return side, Combine
     
