@@ -239,6 +239,11 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
                 
             datalist.append(S)
     pickle.dump(datalist,open(outlist,'wb'))
+    
+def assign(LAB,value):
+    a=np.zeros_like(LAB)
+    a[LAB==value]=1
+    return a
 
 def AddPatch(sampledict,root):
     print(sampledict)
@@ -250,9 +255,15 @@ def AddPatch(sampledict,root):
     print(LAB.shape)
     labels=np.zeros([3]+list(LAB.shape))
     print(labels.shape)
-    labels[0,:,:,:][LAB==0]=1
-    labels[1,:,:,:][LAB==1]=1
-    labels[2,:,:,:][LAB==2]=1
+    
+    
+    # labels[0,:,:,:][LAB==0]=1
+    # labels[1,:,:,:][LAB==1]=1
+    # labels[2,:,:,:][LAB==2]=1
+    
+    labels[0,:,:,:]=assign(LAB,0)
+    labels[1,:,:,:]=assign(LAB,1)
+    labels[2,:,:,:]=assign(LAB,2)
     
     MRI_HD=nib.load(os.path.join(root,sampledict['struct'])).get_fdata().reshape(shape)
     MRI_LD=nib.load(os.path.join(root,sampledict['structB'])).get_fdata().reshape(shape)
