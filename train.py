@@ -8,7 +8,7 @@ from network import CascadedDecoder, U_Net_Like, DEF_PARAMS
 import dataset as D
 from sklearn.model_selection import train_test_split
 
-dataroot='/media/Olowoo/ADAMboxes'
+dataroot='/media/Olowoo/patches_redux'
 datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
 name='testrun'
@@ -24,8 +24,8 @@ savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.1
-Bsize=8
-workers=10
+Bsize=1
+workers=19
 MaxEpochs=2
 Patience=100
 MaxTime=np.inf

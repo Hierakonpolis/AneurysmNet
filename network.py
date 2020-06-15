@@ -14,7 +14,7 @@ class InterpWrapper(nn.Module):
         self.mode=PAR['InterpMode']
     
     def forward(self,input,output_size):
-        return torch.nn.functional.interpolate(input,size=output_size,mode=self.mode)
+        return torch.nn.functional.interpolate(input,size=output_size[-3:],mode=self.mode)
 
 
 class TransposeWrapper(nn.Module):
@@ -57,7 +57,7 @@ DEF_PARAMS={'FilterSize':3,
             'BNorm':nn.BatchNorm3d,
             'Conv':nn.Conv3d,
             'Downsample':PoolWrapper,
-            'Upsample':InterpWrapper,
+            'Upsample':TransposeWrapper,
             'InterpMode':'trilinear',
             'DownConvKernel':3,
             'WDecay':0,
