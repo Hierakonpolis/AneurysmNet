@@ -105,8 +105,8 @@ def Carve(low,high,vol):
 
 def Patch(connected_components,size,positive,loc=None):
     if loc is None:
-        t1=loc>(0,0,0)
-        t2=loc<connected_components.size()
+        t1=False
+        t2=False
         while not np.any(t1*t2):
             if positive:
                 x,y,z = np.where(connected_components>0)
@@ -127,6 +127,9 @@ def Patch(connected_components,size,positive,loc=None):
             else:
                 loc=np.array(connected_components.shape)-size
                 loc=loc*np.random.random(3)+size/2
+            
+            t1=loc>(0,0,0)
+            t2=loc<connected_components.size
     
     
     loc=np.round(loc)
@@ -316,14 +319,14 @@ def YourFriendlyResizer(datapath,standardsize=560,standardsize2=128):
                 newnii=nib.Nifti1Image(newvol, ni.affine,header=ni.header)
                 nib.save(newnii, p+'_res.nii.gz')
                 MRI=newnii
-        if MRI.shape[2]<80:
+        if MRI.shape[2]<80 and MRI.header['pixdim'][3]>0.85:
             print('Upsize',paths['TOF'])
             for ni, o, p in zip(nibs,ords,ps):
                 shapefactor=[1,1,standardsize2/MRI.shape[2]]
                 newvol=zoom(ni.get_fdata(),shapefactor,order=o)
                 H=ni.header
                 H['dim'][3]=standardsize2
-                H['pixdim'][3]=H['pixdim'][3]*standardsize/MRI.shape[3]
+                H['pixdim'][3]=H['pixdim'][3]*standardsize/MRI.shape[2]
                 newnii=nib.Nifti1Image(newvol, ni.affine,header=ni.header)
                 nib.save(newnii, p+'_res.nii.gz')
                 MRI=newnii
