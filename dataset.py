@@ -241,11 +241,15 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
     pickle.dump(datalist,open(outlist,'wb'))
 
 def AddPatch(sampledict,root):
+    print(sampledict)
+    print(root)
     out={}
     LAB=nib.load(os.path.join(root,sampledict['labels'])).get_fdata()
     shape=[1]+list(LAB.shape)
-    
+    print(shape)
+    print(LAB.shape)
     labels=np.zeros([3]+list(LAB.shape))
+    print(labels.shape)
     labels[0,:,:,:][LAB==0]=1
     labels[1,:,:,:][LAB==1]=1
     labels[2,:,:,:][LAB==2]=1
@@ -335,6 +339,10 @@ class PatchesDataset(Dataset):
         return len(self.dataset)
     
     def __getitem__(self,idx):
+        #print(self.dataset[idx])
+        #print(idx)
+        #print(self.path)
+        
         sample=AddPatch(self.dataset[idx],self.path)
         
         if self.transforms:
