@@ -105,35 +105,37 @@ def Carve(low,high,vol):
 
 def Patch(connected_components,size,positive,loc=None):
     if loc is None:
-        if positive:
-            x,y,z = np.where(connected_components>0)
-            num=connected_components.max()
-            bignesses=[len(connected_components[connected_components==k]) for k in range(1,num+1)]
-            weights=np.zeros_like(connected_components).astype(float)
-            
-            for bigness, index in zip(bignesses, range(1,num+1)):
-                weights[connected_components==index]=1/bigness*float(min(bignesses))
-            
-            weights=[weights[x[k],y[k],z[k]] for k in range(len(x))]
-            weights=np.array(weights)
-            
-            loc=np.random.choice(np.arange(0,len(x),1),p=weights/weights.sum())
-            loc=np.array((x[loc],y[loc],z[loc]))
-            
-            loc=loc+(np.random.random(3)-0.5)*size
-        else:
-            loc=np.array(connected_components.shape)-size
-            loc=loc*np.random.random(3)+size/2
+        t1=loc>(0,0,0)
+        t2=loc<connected_components.size()
+        while not np.any(t1*t2):
+            if positive:
+                x,y,z = np.where(connected_components>0)
+                num=connected_components.max()
+                bignesses=[len(connected_components[connected_components==k]) for k in range(1,num+1)]
+                weights=np.zeros_like(connected_components).astype(float)
+                
+                for bigness, index in zip(bignesses, range(1,num+1)):
+                    weights[connected_components==index]=1/bigness*float(min(bignesses))
+                
+                weights=[weights[x[k],y[k],z[k]] for k in range(len(x))]
+                weights=np.array(weights)
+                
+                loc=np.random.choice(np.arange(0,len(x),1),p=weights/weights.sum())
+                loc=np.array((x[loc],y[loc],z[loc]))
+                
+                loc=loc+(np.random.random(3)-0.5)*size
+            else:
+                loc=np.array(connected_components.shape)-size
+                loc=loc*np.random.random(3)+size/2
+    
     
     loc=np.round(loc)
-    maxs=np.array(connected_components.shape)-1
-    lows=np.clip(loc-np.array(size/2).astype(int),0,maxs).astype(int)
-    highs=np.clip(loc+np.array(size/2).astype(int),0,maxs).astype(int)
+
+    maxlows=np.array(connected_components.shape)-size
     
-    highs[lows==0]=size[lows==0]
+    lows=np.clip(loc-np.array(size/2).astype(int),0,maxlows).astype(int)
     
-    maxmins=maxs-size
-    lows[highs==maxs]=maxmins[highs==maxs]
+    highs=lows+size
     
     return lows, highs, loc
 
@@ -205,7 +207,7 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
                    'structB':os.path.join( sample['ID'],'STR_'+str(n)+'_'+si+'_big_'+nametag+'.nii.gz'),
                    'TOFB':os.path.join( sample['ID'],'TOF_'+str(n)+'_'+si+'_big_'+nametag+'.nii.gz'),
                    'labelsB':os.path.join( sample['ID'],'ane_'+str(n)+'_'+si+'_big_'+nametag+'.nii.gz'),
-                   'type':'Positive'}
+                   'type':pos}
                     
             
                 low, high, ref = Patch(connected_components,size,pos)
@@ -218,6 +220,11 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
                 mriB=Carve(low,high,MRI)
                 tofB=Carve(low,high,TOF)
                 
+                if lab.shape[2]==0:
+                    print (low, high, ref, pos, sample)
+                    break
+                
+                assert lab.shape[2]==64
                 
                 zf=np.array(lab.shape)/np.array(labB.shape)
                 
@@ -281,7 +288,7 @@ def AddPatch(sampledict,root):
     
 
 
-def YourFriendlyResizer(datapath,standardsize=560):
+def YourFriendlyResizer(datapath,standardsize=560,standardsize2=128):
     """
     560 scelto per pixdim: 1024*0.1953125/0.35714287
 
@@ -296,6 +303,7 @@ def YourFriendlyResizer(datapath,standardsize=560):
         ps=[paths['struct'],paths['TOF'],paths['label']]
         ords=[3,3,0]
         if MRI.shape[0]>=600:
+            print('Downsize',paths['TOF'])
             for ni, o, p in zip(nibs,ords,ps):
                 assert MRI.shape[1] == MRI.shape[0]
                 shapefactor=[standardsize/MRI.shape[0],standardsize/MRI.shape[1],1]
@@ -307,6 +315,18 @@ def YourFriendlyResizer(datapath,standardsize=560):
                 H['pixdim'][2]=H['pixdim'][2]*standardsize/MRI.shape[1]
                 newnii=nib.Nifti1Image(newvol, ni.affine,header=ni.header)
                 nib.save(newnii, p+'_res.nii.gz')
+                MRI=newnii
+        if MRI.shape[2]<80:
+            print('Upsize',paths['TOF'])
+            for ni, o, p in zip(nibs,ords,ps):
+                shapefactor=[1,1,standardsize2/MRI.shape[2]]
+                newvol=zoom(ni.get_fdata(),shapefactor,order=o)
+                H=ni.header
+                H['dim'][3]=standardsize2
+                H['pixdim'][3]=H['pixdim'][3]*standardsize/MRI.shape[3]
+                newnii=nib.Nifti1Image(newvol, ni.affine,header=ni.header)
+                nib.save(newnii, p+'_res.nii.gz')
+                MRI=newnii
     
 
 def listdata(datafolder):

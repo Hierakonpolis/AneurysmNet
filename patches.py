@@ -8,5 +8,10 @@ Created on Thu Jun 11 20:23:02 2020
 
 import dataset as D
 
+
+
 dataroot='/scratch/project_2003143/ADAM_release_subjs'
+print('Resizing')
+D.YourFriendlyResizer(dataroot)
+print('Patches')
 D.ExtractPatches(dataroot, '/scratch/project_2003143/patches64', 100,size=64)
