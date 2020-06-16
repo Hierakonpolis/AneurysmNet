@@ -152,7 +152,7 @@ def GetPosFrac(dataroot):
     return pos/len(samples)
 
 
-def ExtractPatches(dataroot,outfolder,number,size=64):
+def ExtractPatches(dataroot,outfolder,number,size=64,ActuallySave=True):
     si=str(size)
     samples=listdata(dataroot)
     assert type(size)==int or len(size)==3
@@ -223,11 +223,7 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
                 mriB=Carve(low,high,MRI)
                 tofB=Carve(low,high,TOF)
                 
-                if lab.shape[2]==0:
-                    print (low, high, ref, pos, sample)
-                    break
                 
-                assert lab.shape[2]==64
                 
                 zf=np.array(lab.shape)/np.array(labB.shape)
                 
@@ -237,18 +233,26 @@ def ExtractPatches(dataroot,outfolder,number,size=64):
                 
                 assert labB.shape==lab.shape
                 
-                nib.save(nib.Nifti1Image(lab, aff, hea),os.path.join(outfolder, S['labels']))
-                nib.save(nib.Nifti1Image(mri, aff, hea),os.path.join(outfolder, S['struct']))
-                nib.save(nib.Nifti1Image(tof, aff, hea),os.path.join(outfolder, S['TOF']))
-                
-                nib.save(nib.Nifti1Image(labB, aff, hea),os.path.join(outfolder, S['labelsB']))
-                nib.save(nib.Nifti1Image(mriB, aff, hea),os.path.join(outfolder, S['structB']))
-                nib.save(nib.Nifti1Image(tofB, aff, hea),os.path.join(outfolder, S['TOFB']))
-                datalist.append(S)
+                for x in [lab,labB,mri,mriB,tof,tofB]:
+                    test=np.all(size==x.shape)
+                    
+                    if not test:
+                        
+                        print (low, high, ref, pos, sample)
+                        return (low, high, ref, pos, sample)
+                if ActuallySave:
+                    nib.save(nib.Nifti1Image(lab, aff, hea),os.path.join(outfolder, S['labels']))
+                    nib.save(nib.Nifti1Image(mri, aff, hea),os.path.join(outfolder, S['struct']))
+                    nib.save(nib.Nifti1Image(tof, aff, hea),os.path.join(outfolder, S['TOF']))
+                    
+                    nib.save(nib.Nifti1Image(labB, aff, hea),os.path.join(outfolder, S['labelsB']))
+                    nib.save(nib.Nifti1Image(mriB, aff, hea),os.path.join(outfolder, S['structB']))
+                    nib.save(nib.Nifti1Image(tofB, aff, hea),os.path.join(outfolder, S['TOFB']))
+                    datalist.append(S)
                 
                 
             datalist.append(S)
-    pickle.dump(datalist,open(outlist,'wb'))
+    if ActuallySave: pickle.dump(datalist,open(outlist,'wb'))
     
 def assign(LAB,value):
     a=np.zeros_like(LAB)
@@ -304,6 +308,7 @@ def YourFriendlyResizer(datapath,standardsize=560,standardsize2=128):
         LAB=nib.load(paths['label'])
         nibs=[MRI,TOF,LAB]
         ps=[paths['struct'],paths['TOF'],paths['label']]
+        newnib=[]
         ords=[3,3,0]
         if MRI.shape[0]>=600:
             print('Downsize',paths['TOF'])
@@ -318,18 +323,20 @@ def YourFriendlyResizer(datapath,standardsize=560,standardsize2=128):
                 H['pixdim'][2]=H['pixdim'][2]*standardsize/MRI.shape[1]
                 newnii=nib.Nifti1Image(newvol, ni.affine,header=ni.header)
                 nib.save(newnii, p+'_res.nii.gz')
-                MRI=newnii
+                newnib.append(newnii)
+            nibs = newnib
+        
         if MRI.shape[2]<80 and MRI.header['pixdim'][3]>0.85:
             print('Upsize',paths['TOF'])
             for ni, o, p in zip(nibs,ords,ps):
                 shapefactor=[1,1,standardsize2/MRI.shape[2]]
                 newvol=zoom(ni.get_fdata(),shapefactor,order=o)
+                print(newvol.shape)
                 H=ni.header
                 H['dim'][3]=standardsize2
                 H['pixdim'][3]=H['pixdim'][3]*standardsize/MRI.shape[2]
                 newnii=nib.Nifti1Image(newvol, ni.affine,header=ni.header)
                 nib.save(newnii, p+'_res.nii.gz')
-                MRI=newnii
     
 
 def listdata(datafolder):
