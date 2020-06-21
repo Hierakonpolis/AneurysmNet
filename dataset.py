@@ -260,15 +260,15 @@ def assign(LAB,value):
     return a
 
 def AddPatch(sampledict,root):
-    print(sampledict)
-    print(root)
+    #print(sampledict)
+    #print(root)
     out={}
     LAB=nib.load(os.path.join(root,sampledict['labels'])).get_fdata()
     shape=[1]+list(LAB.shape)
-    print(shape)
-    print(LAB.shape)
+    #print(shape)
+    #print(LAB.shape)
     labels=np.zeros([3]+list(LAB.shape))
-    print(labels.shape)
+    #print(labels.shape)
     
     
     # labels[0,:,:,:][LAB==0]=1
