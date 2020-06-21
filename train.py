@@ -23,13 +23,12 @@ saveprogress=os.path.join(saveroot,name+'_prog.pth')
 savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
-testsize=0.1
+testsize=0.05
 Bsize=8
 workers=19
 MaxEpochs=np.inf
-Patience=100
+Patience=10
 MaxTime=np.inf
-
 
 # shift=D.Shift([40,15,0],probability=0.5,order={'sample':3,'labels':0})
 # rot=D.Rotate(5, probability=0.5,order={'sample':3,'labels':0})

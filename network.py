@@ -52,7 +52,7 @@ DEF_PARAMS={'FilterSize':3,
             'Categories':int(3), 
             'Activation':nn.LeakyReLU, 
             'InblockSkip':False,
-            'ResidualConnections':False,
+            'ResidualConnections':True,
             'PoolShape':2,
             'BNorm':nn.BatchNorm3d,
             'Conv':nn.Conv3d,
@@ -60,6 +60,9 @@ DEF_PARAMS={'FilterSize':3,
             'Upsample':TransposeWrapper,
             'InterpMode':'trilinear',
             'DownConvKernel':3,
+            'Weights':(0.001,1,0.5),
+            'SideBranchWeight':0.1,
+            'CCEweight':1,
             'WDecay':0,
             'TransposeSize':4,
             'TransposeStride':2,
@@ -284,6 +287,7 @@ class USideBranch(nn.Module):
                                                PARAMS['Categories'],
                                                PAR=PARAMS,
                                                Inplace=True)
+        self.SM=nn.Softmax(dim=1)
     def forward(self,x,outsize):
         
         for i in reversed(range(1,self.depth+1)):
@@ -292,7 +296,9 @@ class USideBranch(nn.Module):
             x=self.layerlist['Up'+str(i)](x,tsize)
             x=self.layerlist['Dense'+str(i)](x)
         
-        return self.layerlist['Dense'+str(0)](x)
+        x= self.layerlist['Dense'+str(0)](x)
+        
+        return self.SM(x)
     
 def Upsize(chanvol,volvol):
     
@@ -365,9 +371,9 @@ class U_Net_Like(nn.Module):
                                               PAR=PARAMS)
         self.side[str(0)]=USideBranch(0,PARAMS,PARAMS['FiltersDecoder'][0])
         
-        
         self.Classifier=PARAMS['Conv'](PARAMS['Categories']*len(PARAMS['FiltersDecoder']),PARAMS['Categories'],1) #classifier layer
         self.softmax=nn.Softmax(dim=1)
+        
             
             
     def forward(self,MRI_high,MRI_low):
@@ -471,6 +477,9 @@ class CascadedDecoder(nn.Module):
         
         self.Classifier=PARAMS['Conv'](PARAMS['Categories']*3,PARAMS['Categories'],1)
         self.softmax=nn.Softmax(dim=1)
+        self.softmax1=nn.Softmax(dim=1)
+        self.softmax2=nn.Softmax(dim=1)
+        self.softmax3=nn.Softmax(dim=1)
         
     def forward(self,MRI_high,MRI_low):
         
@@ -498,8 +507,9 @@ class CascadedDecoder(nn.Module):
               self.decoder['Intermediate 1'](D1),
               self.decoder['Intermediate 2'](D2_b)]
         
-        for k in range(3):
-            side[k]=self.softmax(side[k])
+        side[0]=self.softmax1(side[0])
+        side[1]=self.softmax2(side[1])
+        side[2]=self.softmax3(side[2])
         
         Combine=self.softmax(self.Classifier(torch.cat(side,dim=1)))
         

@@ -11,12 +11,24 @@ from radam import RAdam
 import numpy as np
 import torch, tqdm, time, os
 
+EPS=1e-10
+
 def DiceLoss(Ytrue,Ypred):
 
     DICE = -torch.div( torch.sum(torch.mul(torch.mul(Ytrue,Ypred),2)),
                       torch.sum(torch.mul(Ypred,Ypred)) + torch.sum(torch.mul(Ytrue,Ytrue))+1)
     
     return DICE
+def CCE(Ytrue,Ypred,CatW):
+    shape=Ytrue.shape
+    CCE=-torch.mul(Ytrue,torch.log(Ypred + EPS))
+    W=torch.tensor(CatW).reshape((1,len(CatW),1,1,1)).expand(shape).float()
+    
+    W.requires_grad=False
+    
+    wCCE=torch.mul(W,CCE)
+    
+    return torch.mean(wCCE)
 
 def Dice(labels,Ypred):
     
@@ -321,10 +333,11 @@ class Segmentation():
             self.save(saveprogress)
             
     def loss(self,sidebranches,output,GT):
+        
         GT=GT.to(self.opt['device'])
-        loss=DiceLoss(GT,output)
+        loss=DiceLoss(GT,output) + self.opt['PAR']['CCEweight']*CCE(GT, output, self.opt['PAR']['Weights'])
         for x in sidebranches:
-            loss+=DiceLoss(GT,x)
+            loss+=(DiceLoss(GT,x) + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights']))*self.opt['PAR']['SideBranchWeight']
         return loss
     
     def inferece(self):
