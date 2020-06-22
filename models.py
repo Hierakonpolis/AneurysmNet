@@ -340,5 +340,5 @@ class Segmentation():
             loss+=(DiceLoss(GT,x) + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights']))*self.opt['PAR']['SideBranchWeight']
         return loss
     
-    def inferece(self):
-        pass
+    def inferece(self,input):
+        return self.network(input)
