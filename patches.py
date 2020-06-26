@@ -15,5 +15,5 @@ dataroot='/scratch/project_2003143/ADAM_release_subjs'
 print('Resizing')
 D.YourFriendlyResizer(dataroot)
 print('Patches')
-D.ExtractPatches(dataroot, '/scratch/project_2003143/patches64', 100,size=64)
+D.ExtractPatches(dataroot, '/scratch/project_2003143/patches32', 100,size=32)
 # a=D.ExtractPatches(dataroot, '/tmp', 40,size=64,ActuallySave=False)
