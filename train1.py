@@ -4,7 +4,7 @@
 import torch, pickle, os, torchvision, sys
 from models import Segmentation
 import numpy as np
-from network import CascadedDecoder, U_Net_Like, DEF_PARAMS
+from network import U_Net_double, DEF_PARAMS
 import network as N
 import dataset as D
 from sklearn.model_selection import train_test_split
@@ -35,7 +35,7 @@ DEF_PARAMS['TransposeStride']=2
 dataroot='/media/Olowoo/patches_redux'
 datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
-name='CascadedDecoder'
+name='DoubleUnet'
 
 dataroot='/scratch/project_2003143/patches64'
 saveroot='/projappl/project_2003143'
@@ -67,7 +67,7 @@ train_idxs, test_idxs = train_test_split(np.arange(len(dataset)), test_size=test
 trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(train_idxs),num_workers=workers)
 testloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(test_idxs),num_workers=workers)
 
-Model=Segmentation(N.CascadedDecoder,
+Model=Segmentation(U_Net_double,
                    savefile=None,
                    parameters=DEF_PARAMS,
                    trainset=train_idxs,
