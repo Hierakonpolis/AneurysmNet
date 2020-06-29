@@ -4,7 +4,7 @@
 import torch, pickle, os, torchvision, sys
 from models import Segmentation
 import numpy as np
-from network import CascadedDecoder, U_Net_Like, DEF_PARAMS
+from network import CascadedDecoder, U_Net, DEF_PARAMS
 import network as N
 import dataset as D
 from sklearn.model_selection import train_test_split
@@ -67,7 +67,7 @@ train_idxs, test_idxs = train_test_split(np.arange(len(dataset)), test_size=test
 trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(train_idxs),num_workers=workers)
 testloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(test_idxs),num_workers=workers)
 
-Model=Segmentation(N.U_Net_Like,
+Model=Segmentation(N.U_Net,
                    savefile=None,
                    parameters=DEF_PARAMS,
                    trainset=train_idxs,
