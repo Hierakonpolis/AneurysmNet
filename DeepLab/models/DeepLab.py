@@ -1,11 +1,13 @@
 import torch
-from torch.nn import Conv2d, Conv3d
+from torch.nn import Conv2d, Conv3d, ConvTranspose3d, ConvTranspose2d
 from DeepLab.models.Xception import Xception_DeepLabv3Plus
 from DeepLab.blocks.DeepLabBlocks import DeepLabv3_ASPP, DeepLabv3_Head
 from DeepLab.blocks.BasicBlocks import Interpolate, Softmax, Cat
 
 # first_filters=32
 # dim="2D"
+
+
 class DeepLabv3Plus(torch.nn.Module):
     params = ["modalities", "n_classes", "first_filters", "dim"]
     def __init__(self, PARS):
@@ -28,12 +30,21 @@ class DeepLabv3Plus(torch.nn.Module):
 
         if dim == "2D":
             Conv = Conv2d
+            CT=ConvTranspose2d
         elif dim == "3D":
             Conv = Conv3d
+            CT=ConvTranspose3d
+        
+        self.interp1=CT(first_filters*16, first_filters*16, kernel_size=4,stride=2,padding=1)
+        self.interp2=CT(first_filters*16, first_filters*16, kernel_size=4,stride=2,padding=1)
+        
         self.last_conv = Conv(first_filters*16, n_classes, 3, padding=1)
 
         self.cat = Cat()
         self.interpolate = Interpolate()
+        
+        
+        
         self.softmax = Softmax()
 
     def forward(self, x, x1):
@@ -44,9 +55,12 @@ class DeepLabv3Plus(torch.nn.Module):
         out = self.interpolate(out, size=list(skip.size()[2:]),
                 mode=self.interpol_mode, align_corners=False)
         out = self.cat([out, skip], dim=1)
+        
+        out = self.interp1(out,output_size=torch.tensor(x.shape[2:])/2)
+        out = self.interp2(out,output_size=x.shape[2:])
+        
         out = self.last_conv(out)
-        out = self.interpolate(out, size=x.shape[2:],
-                mode=self.interpol_mode, align_corners=False)
+        
         out = self.softmax(out, dim=1)
         return [], out 
 

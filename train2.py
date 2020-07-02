@@ -13,7 +13,7 @@ from DeepLab.models.DeepLab import DeepLabv3Plus
 dataroot='/media/Olowoo/patches_redux'
 datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
-name='DeepLab'
+name='DeepLab_Upconv'
 
 dataroot='/scratch/project_2003143/patches64'
 saveroot='/projappl/project_2003143'
