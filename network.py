@@ -70,7 +70,7 @@ DEF_PARAMS={'FilterSize':3,
             }
 DEF_DEEPLAB={"modalities":4,
              "n_classes":3, 
-             "first_filters":64,
+             "first_filters":128,
              "dim":"3D",
              'Weights':(0.001,1,0.5),
             'CCEweight':1,

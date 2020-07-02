@@ -10,9 +10,9 @@ import dataset as D
 from sklearn.model_selection import train_test_split
 
 DEF_PARAMS['FilterSize']=3
-DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
+DEF_PARAMS['FiltersNumHighRes']=np.array([32, 64, 64])
+DEF_PARAMS['FiltersNumLowRes']=np.array([32, 64, 64])
+DEF_PARAMS['FiltersDecoder']=np.array([32, 64, 64])
 DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
 DEF_PARAMS['InblockSkip']=False
