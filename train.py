@@ -37,19 +37,19 @@ datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
 name='unet'
 
-dataroot='/scratch/project_2003143/patches64'
-saveroot='/projappl/project_2003143'
+# dataroot='/scratch/project_2003143/patches64'
+# saveroot='/projappl/project_2003143'
 if len(sys.argv)>1:
     dataroot=sys.argv[1]
 # groupfile='groups.p'
 
-saveprogress=os.path.join(saveroot,name+'_prog.pth')
-savebest=os.path.join(saveroot,name+'_best.pth')
+# saveprogress=os.path.join(saveroot,name+'_prog.pth')
+# savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
-Bsize=8
-workers=19
+Bsize=1
+workers=1
 MaxEpochs=np.inf
 Patience=10
 MaxTime=np.inf
@@ -68,15 +68,15 @@ trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch
 testloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(test_idxs),num_workers=workers)
 
 Model=Segmentation(N.U_Net,
-                   savefile=saveprogress,
+                   savefile='/home/cat/AneurysmNet/__pycache__/unet_best.pth',
                    parameters=DEF_PARAMS,
                    trainset=train_idxs,
                    testset=test_idxs)
 
-Model.train(trainloader,
-            testloader,
-            max_epochs=MaxEpochs,
-            patience=Patience,
-            max_time=MaxTime,
-            saveprogress=saveprogress,
-            savebest=savebest)
+# Model.train(trainloader,
+#             testloader,
+#             max_epochs=MaxEpochs,
+#             patience=Patience,
+#             max_time=MaxTime,
+#             saveprogress=saveprogress,
+#             savebest=savebest)

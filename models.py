@@ -340,5 +340,19 @@ class Segmentation():
             loss+=(DiceLoss(GT,x) + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights']))*self.opt['PAR']['SideBranchWeight']
         return loss
     
-    def inferece(self,input):
-        return self.network(input)
+    def inferece(self,inputloader,manyness):
+        samples=[]
+        self.network.eval()
+        
+        with torch.no_grad():
+            for i, sample in tqdm.tqdm(enumerate(inputloader),total=len(inputloader),desc='Inference...'):
+                torch.cuda.empty_cache()
+                
+                sidebranches,combined= self.network(sample['HD'],sample['LD'])
+                
+                samples.append(combined.detach().cpu().numpy())
+                if i==manyness: break
+        
+        
+        return samples
+    

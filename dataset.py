@@ -134,9 +134,9 @@ def Patch(connected_components,size,positive,loc=None):
     
     loc=np.round(loc)
 
-    maxlows=np.array(connected_components.shape)-size
+    max_upper_indexes=np.array(connected_components.shape)-size
     
-    lows=np.clip(loc-np.array(size/2).astype(int),0,maxlows).astype(int)
+    lows=np.clip(loc-np.array(size/2).astype(int),0,max_upper_indexes).astype(int)
     
     highs=lows+size
     
