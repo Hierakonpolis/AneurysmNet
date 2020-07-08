@@ -27,7 +27,7 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
 Bsize=8
-workers=19
+workers=9
 MaxEpochs=np.inf
 Patience=10
 MaxTime=np.inf
