@@ -232,6 +232,7 @@ class Segmentation():
             self.opt['TotalTime']=0
             self.opt['BestLoss']=np.inf
             self.opt['BestLossEpoch']=0
+            self.opt['BestDice']=0
             
             self.network=network(self.opt['PAR']).to(self.opt['device'])
             self.optimizer=RAdam(self.network.parameters(),weight_decay=self.opt['PAR']['WDecay'])
@@ -303,7 +304,7 @@ class Segmentation():
         print(flush=True)
         print('Test set Dices:',dices,flush=True)
 
-        return np.mean(losses)
+        return np.mean(losses), dices[1]
     
     def train(self,
               train_dataloader,
@@ -321,7 +322,7 @@ class Segmentation():
             trainloss = self.train_one_epoch(train_dataloader)
             print('Training set running mean loss: ',trainloss,flush=True)
             
-            testloss=self.test(test_dataloader)
+            testloss, dice = self.test(test_dataloader)
             print('Test set loss: ',testloss,flush=True)
             self.opt['TotalTime'] += time.time()-start
             
@@ -329,6 +330,11 @@ class Segmentation():
                 self.opt['BestLoss']= testloss
                 self.opt['BestLossEpoch']=self.opt['Epoch']
                 self.save(savebest)
+            
+            if dice > self.opt['BestDice']:
+                savedice = savebest.rstrip('.pth')+'_dice.pth'
+                self.opt['BestDice'] = dice
+                self.save(savedice)
             
             self.save(saveprogress)
             
