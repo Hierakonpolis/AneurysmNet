@@ -152,7 +152,7 @@ def GetPosFrac(dataroot):
     return pos/len(samples)
 
 
-def ExtractPatches(dataroot,outfolder,number,size=64,ActuallySave=True):
+def ExtractPatches(dataroot,outfolder,number,size=64,ActuallySave=True,volpriority='_res.nii.gz'):
     si=str(size)
     samples=listdata(dataroot)
     assert type(size)==int or len(size)==3
@@ -167,10 +167,10 @@ def ExtractPatches(dataroot,outfolder,number,size=64,ActuallySave=True):
     for sample in samples.values():
         
         
-        if os.path.isfile(sample['struct']+'_res.nii.gz'):
-            MRI=nib.load(sample['struct']+'_res.nii.gz').get_fdata()
-            TOF=nib.load(sample['TOF']+'_res.nii.gz')
-            LAB=nib.load(sample['label']+'_res.nii.gz').get_fdata()
+        if os.path.isfile(sample['struct']+volpriority):
+            MRI=nib.load(sample['struct']+volpriority).get_fdata()
+            TOF=nib.load(sample['TOF']+volpriority)
+            LAB=nib.load(sample['label']+volpriority).get_fdata()
         else:
             
             MRI=nib.load(sample['struct']).get_fdata()
@@ -292,8 +292,57 @@ def AddPatch(sampledict,root):
     
     
     return out
-    
 
+
+def SizeStats(datapath):
+    dataset=listdata(datapath)
+    dims=[]
+    pixdims=[]
+    for paths in tqdm.tqdm(dataset.values()):
+        
+        TOF=nib.load(paths['TOF'])
+        H=TOF.header
+        dims.append(H['dim'])
+        pixdims.append(H['pixdim'])
+        
+    return dims, pixdims
+    
+def TheAllResizer(datapath,xysize=0.35714287,zsize=0.5):
+    """
+    560 scelto per pixdim: 1024*0.1953125/0.35714287
+
+    """
+    dataset=listdata(datapath)
+    defsize=np.array((xysize,xysize,zsize))
+    with tqdm.tqdm(total=len(dataset.values())) as t:
+        for paths in dataset.values():
+                
+            MRI=nib.load(paths['struct'])
+            TOF=nib.load(paths['TOF'])
+            LAB=nib.load(paths['label'])
+            nibs=[MRI,TOF,LAB]
+            ps=[paths['struct'],paths['TOF'],paths['label']]
+            
+            ords=[3,3,0]
+            
+            for ni, o, p in zip(nibs,ords,ps):
+                
+                t.set_description(p)
+                H=ni.header
+                size=np.array((H['pixdim'][1],H['pixdim'][2],H['pixdim'][3]))
+                shapefactor=size/defsize
+                newvol=zoom(ni.get_fdata(),shapefactor,order=o)
+                H['dim'][1]=newvol.shape[0]
+                H['dim'][2]=newvol.shape[1]
+                H['dim'][3]=newvol.shape[2]
+                H['pixdim'][1]=xysize
+                H['pixdim'][2]=xysize
+                H['pixdim'][3]=zsize
+                
+                newnii=nib.Nifti1Image(newvol, ni.affine,header=ni.header)
+                nib.save(newnii, p+'_standard.nii.gz')
+            t.update()
+        
 
 def YourFriendlyResizer(datapath,standardsize=560,standardsize2=128):
     """
