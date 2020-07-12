@@ -595,15 +595,15 @@ def run_tests(box_size, accuracy, neighbours, pix_close, directory):
 # run_tests(64, 0.001, False, 10, '/media/Olowoo/ADAM_release_subjs')
 run_tests(64, 0.005, False, 12, '/media/Olowoo/ADAM_release_subjs')
 
-percs=[0.005,0.002,0.001,0.0005]
-dist=[3,5,10,15,20]
+percs=[0.002,0.001,0.0005,0.0001]
+dist=[5,10,15,20]
 total=len(percs)*len(dist)
 resultlist=[]
 processes=[]
 
 for percentile in percs:
     for distdelta in dist:
-        for theothervariable in [True,False]:
+        for theothervariable in [False]:
             resultlist.append(run_tests(64, percentile, theothervariable, distdelta,'/scratch/project_2003143/ADAM_release_subjs'))
 
 import pickle
