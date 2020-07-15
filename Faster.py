@@ -279,7 +279,7 @@ def top_values(data, prc):
 
     return bright_co_np
 
-def potential_aneurysm(data, box_size, accuracy, neighbours, pix_close):
+def potential_aneurysm(data, box_size=64, accuracy=0.005, neighbours=False, pix_close=10):
     """
     Goes through the given image and returns a list of possible aneurysms
  
@@ -456,7 +456,7 @@ def make_location_txt(directory, numeric):
                 list_of_files.append(os.path.join(subdir, file))
 
     for j in reversed(range(len(list_of_files))):
-        if "pre" in list_of_files[j]:
+        if "orig" in list_of_files[j]:
             del list_of_files[j]
 
     data_file = open(file_name, 'w')
@@ -550,62 +550,62 @@ def run_tests(box_size, accuracy, neighbours, pix_close, directory):
         found, found_one, not_found_one = check_result(results, aneurysm_locations[i], box_size) # Checks whether the aneurysms are in at least one of the proposed regions 
 
         if found:
-            # print("Aneurysms found from image nro", dataset_name + '.', "Time:", str(passed), "seconds" + '.', 'Number of regions proposed: ', str(len(results)))
+            print("Aneurysms found from image nro", dataset_name + '.', "Time:", str(passed), "seconds" + '.', 'Number of regions proposed: ', str(len(results)))
             found_nro += 1
             results_sum += len(results)
             found_total += found_one
         else:
-            # print("Aneurysms not found from image", dataset_name + '.', "Time:", str(passed), "seconds" + '.', 'Number of regions proposed: ', str(len(results)))
+            print("Aneurysms not found from image", dataset_name + '.', "Time:", str(passed), "seconds" + '.', 'Number of regions proposed: ', str(len(results)))
             list_not_found.append(('From dataset: ' + str(dataset_name) + '. Nro of aneurysms not found: ' + str(not_found_one)))
             results_sum += len(results)
             not_found_total += not_found_one
             found_total += found_one
 
  
-    # print('-----')
-    # print("Number of datasets went through:", str(amount), ", from which the aneurysms were found in", str(found_nro))
-    # print('-----')
-    # if len(list_not_found) > 0:
-    #     print('--ANEURYSMS NOT FOUND--')
-    #     print('Total number of aneurysms:', str(not_found_total + found_total))
-    #     print('Total number of aneurysms not found:', str(not_found_total))
-    #     print('Percentage missed:' + str(not_found_total/found_total))
-    #     for j in range(len(list_not_found)):
-    #         print(list_not_found[j])
-    #     print('-----')
-    # else:
-    #     print('Total number of aneurysms:', str(not_found_total + found_total))
+    print('-----')
+    print("Number of datasets went through:", str(amount), ", from which the aneurysms were found in", str(found_nro))
+    print('-----')
+    if len(list_not_found) > 0:
+        print('--ANEURYSMS NOT FOUND--')
+        print('Total number of aneurysms:', str(not_found_total + found_total))
+        print('Total number of aneurysms not found:', str(not_found_total))
+        print('Percentage missed:' + str(not_found_total/found_total))
+        for j in range(len(list_not_found)):
+            print(list_not_found[j])
+        print('-----')
+    else:
+        print('Total number of aneurysms:', str(not_found_total + found_total))
 
-    # print("Total time: ", str(passed), "seconds")
-    # print("Time per image: ", str(passed/amount), "seconds")
-    # print("The average of proposed regions per image: ", str(results_sum / amount))
+    print("Total time: ", str(passed), "seconds")
+    print("Time per image: ", str(passed/amount), "seconds")
+    print("The average of proposed regions per image: ", str(results_sum / amount))
 
-    # print('-----')
-    # print('Used parameters:')
-    # print('Box-size: ', box_size)
-    # print('Percentage: ', accuracy)
-    # print('Neighbours: ', neighbours)
-    # print('Pixel closeness value:', pix_close)
-    # print('--END OF RUN--')
-    # print('')
+    print('-----')
+    print('Used parameters:')
+    print('Box-size: ', box_size)
+    print('Percentage: ', accuracy)
+    print('Neighbours: ', neighbours)
+    print('Pixel closeness value:', pix_close)
+    print('--END OF RUN--')
+    print('')
     
     return (not_found_total,results_sum, box_size, accuracy, neighbours, pix_close)
 
 # You can check the functions commentations for the parameters.
 # run_tests(64, 0.001, False, 10, '/media/Olowoo/ADAM_release_subjs')
-run_tests(64, 0.005, False, 12, '/media/Olowoo/ADAM_release_subjs')
+# run_tests(64, 0.005, False, 10, '/media/Olowoo/ADAM_release_subjs')
 
-percs=[0.002,0.001,0.0005,0.0001]
-dist=[5,10,15,20]
-total=len(percs)*len(dist)
-resultlist=[]
-processes=[]
+# percs=[0.002,0.001,0.0005,0.0001]
+# dist=[5,10,15,20]
+# total=len(percs)*len(dist)
+# resultlist=[]
+# processes=[]
 
-for percentile in percs:
-    for distdelta in dist:
-        for theothervariable in [False]:
-            resultlist.append(run_tests(64, percentile, theothervariable, distdelta,'/scratch/project_2003143/ADAM_release_subjs'))
+# for percentile in percs:
+#     for distdelta in dist:
+#         for theothervariable in [False]:
+#             resultlist.append(run_tests(64, percentile, theothervariable, distdelta,'/scratch/project_2003143/ADAM_release_subjs'))
 
-import pickle
-pickle.dump(resultlist,open('/projappl/project_2003143/PatchGridSearch.p','wb'))
+# import pickle
+# pickle.dump(resultlist,open('/projappl/project_2003143/PatchGridSearch.p','wb'))
         

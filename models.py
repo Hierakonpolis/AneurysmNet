@@ -10,6 +10,7 @@ from network import YoloRP, YoLoss, TruthPooler
 from radam import RAdam
 import numpy as np
 import torch, tqdm, time, os
+from dataset import Rebuild
 
 EPS=1e-10
 
@@ -214,7 +215,7 @@ class YOLOr():
 
 class Segmentation():
     
-    def __init__(self,network,savefile=None,parameters=None,trainset=None,testset=None,device='cuda'):
+    def __init__(self,network,savefile=None,parameters=None,testset=None,device='cuda'):
         
         if savefile and os.path.isfile(savefile):
             self.load(savefile,network)
@@ -223,7 +224,6 @@ class Segmentation():
             
             self.opt['PAR']=parameters
             self.opt['device']=device
-            self.opt['trainset']=trainset
             self.opt['testset']=testset
             self.opt['Epoch']=0
             self.opt['TrainingLoss']=[]
@@ -346,8 +346,9 @@ class Segmentation():
             loss+=(DiceLoss(GT,x) + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights']))*self.opt['PAR']['SideBranchWeight']
         return loss
     
-    def inferece(self,inputloader,manyness):
+    def inferece(self,inputloader,PreThreshold=True,FinalThreshold=True):
         samples=[]
+        locations=[]
         self.network.eval()
         
         with torch.no_grad():
@@ -357,8 +358,30 @@ class Segmentation():
                 sidebranches,combined= self.network(sample['HD'],sample['LD'])
                 
                 samples.append(combined.detach().cpu().numpy())
-                if i==manyness: break
+                locations.append(sample['loc'].detach().cpu().numpy())
         
+        patches=[]
+        centerpoints=[]
         
-        return samples
+        for k in tqdm.tqdm(range(len(samples)),desc='Patches...'):
+            for K in np.split(samples[k], samples[k].shape[0],axis=0):
+                labels=K.reshape((3,64,64,64))
+                if PreThreshold:
+                
+                    labels [np.where(labels== np.amax(labels,axis=0))] = 1
+                    labels[labels!=1]=0
+                
+                patches.append(labels[1,:,:,:])
+                
+            for K in np.split(locations[k], locations[k].shape[0],axis=0):
+                centerpoints.append(K.reshape(3).astype(int))
+                
+        
+        res=Rebuild(inputloader.dataset.vol, patches, centerpoints)
+        
+        if FinalThreshold:
+            res[res>0.5]=1
+            res[res!= 1]=0
+        
+        return res
     

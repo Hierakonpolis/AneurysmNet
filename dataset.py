@@ -19,6 +19,7 @@ from scipy.ndimage import rotate
 import numpy as np
 from skimage.measure import label
 from torch.utils.data import Dataset
+from Faster import potential_aneurysm
 torch.set_default_tensor_type('torch.cuda.FloatTensor') 
 
 def IDListMaker(groups,which,mode='train'):
@@ -55,8 +56,50 @@ def AddSampleFilePaths(folder,foldersdict):
 
 
 
-def MakePatches(dataroot,destination):
-    pass
+class OneVolPatchSet(Dataset):
+    def __init__(self,volumepath,anatomy,transforms=None):
+        self.vol=normalize(nib.load(volumepath).get_fdata())
+        self.anatomy=normalize(nib.load(anatomy).get_fdata())
+        self.locations=potential_aneurysm(self.vol)
+        
+        # self.dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
+        # self.path=patchesroot
+        self.transforms=transforms
+    def __len__(self):
+        return len(self.locations)
+    
+    def __getitem__(self,idx):
+        low, high, loc =Patch(self.vol,64,None,self.locations[idx])
+        
+        HRT=Carve(low,high,self.vol)
+        shape=[1]+list(HRT.shape)
+        
+        HRA=Carve(low,high,self.anatomy).reshape(shape)
+        
+        low, high, loc1 =Patch(self.vol,64*2,None,self.locations[idx])
+        assert np.all(loc==loc1)
+        LRT=Carve(low,high,self.vol)
+        LRA=Carve(low,high,self.anatomy)
+        
+        
+        zf=np.array(HRT.shape)/np.array(LRT.shape)
+        
+        LRT=zoom(LRT,zf,order=3).reshape(shape)
+        LRA=zoom(LRA,zf,order=3).reshape(shape)
+        
+        HRT=HRT.reshape(shape)
+        
+        HR=np.concatenate([HRA,HRT],axis=0)
+        LR=np.concatenate([LRA,LRT],axis=0)
+        
+        sample={'HD':HR,
+                'LD':LR,
+                'loc':loc}
+        
+        if self.transforms:
+            sample=self.transforms(sample)
+        
+        return sample
 
 
 def AddToYolo(SamplePaths):
@@ -99,9 +142,19 @@ def AddToYolo(SamplePaths):
     
     return out
 
+def Rebuild(RefVol,patches,locations,size=64):
+    new=np.zeros_like(RefVol)
+    scount=np.zeros_like(RefVol)
+    for patch, loc in tqdm.tqdm(zip(patches,locations),desc='Building output...',total=len(patches)):
+        low, high, _ = Patch(RefVol,size,None,loc)
+        new[low[0]:high[0],low[1]:high[1],low[2]:high[2]] += patch
+        scount[low[0]:high[0],low[1]:high[1],low[2]:high[2]] +=1
+    scount[scount==0]=1
+    return new/scount
+
 def Carve(low,high,vol):
     
-    return vol[low[0]:high[0],low[1]:high[1],low[2]:high[2]]
+    return np.copy(vol[low[0]:high[0],low[1]:high[1],low[2]:high[2]])
 
 def Patch(connected_components,size,positive,loc=None):
     if loc is None:
@@ -421,8 +474,12 @@ class YoloDataset(Dataset):
         return sample
 
 class PatchesDataset(Dataset):
-    def __init__(self,patchesroot,databoxfile,transforms=None):
-        self.dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
+    def __init__(self,patchesroot,databoxfile,transforms=None, Testsbj=[],Test=False):
+        dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
+        if Test:
+            self.dataset=[k for k in dataset if k['ID'] in Testsbj]
+        else:
+            self.dataset=[k for k in dataset if k['ID'] not in Testsbj]
         self.path=patchesroot
         self.transforms=transforms
     def __len__(self):
@@ -518,6 +575,8 @@ class ToTensor():
         self.order=order
     def __call__(self,sample):
         # print('ToTensor')
+        # if 'loc' in sample:
+        #     sample['loc']=
         for key in self.order:
             sample[key]=torch.from_numpy(sample[key]).float()#.to(self.device)
             
