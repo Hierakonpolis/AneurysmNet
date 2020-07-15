@@ -14,7 +14,9 @@ dataroot='/scratch/project_2003143/ADAM_release_subjs'
 # dataroot='/home/cat/ADAM_release_subjs'
 print('Resizing')
 # D.YourFriendlyResizer(dataroot)
-D.TheAllResizer(dataroot)
+# D.TheAllResizer(dataroot)
 print('Patches')
-D.ExtractPatches(dataroot, '/scratch/project_2003143/patches64_resized', 100,size=64,volpriority='_standard.nii.gz')
+# D.NewPatches(dataroot, '/media/Olowoo/patches64_new', size=64,maxp=2)
+D.NewPatches(dataroot, '/scratch/project_2003143/patches64_new', size=64)
+D.NewPatches(dataroot, '/scratch/project_2003143/patches64_resized_new', size=64)
 # a=D.ExtractPatches(dataroot, '/tmp', 40,size=64,ActuallySave=False)

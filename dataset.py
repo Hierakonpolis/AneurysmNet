@@ -204,6 +204,94 @@ def GetPosFrac(dataroot):
             pos+=1
     return pos/len(samples)
 
+def NewPatches(dataroot,outfolder,size=64,ActuallySave=True,volpriority='_res.nii.gz',maxp=np.inf):
+    si=str(size)
+    samples=listdata(dataroot)
+    assert type(size)==int or len(size)==3
+    size=np.array((1,1,1))*np.array(size)
+    datalist=[]
+    outlist=os.path.join(outfolder,'databox'+str(size)+'.p')
+    if os.path.isfile(outlist): datalist=pickle.load(open(outlist,'rb'))
+    
+    for sample in samples.values():
+        
+        
+        if os.path.isfile(sample['struct']+volpriority):
+            MRI=nib.load(sample['struct']+volpriority).get_fdata()
+            TOF=nib.load(sample['TOF']+volpriority)
+            LAB=nib.load(sample['label']+volpriority).get_fdata()
+        else:
+            
+            MRI=nib.load(sample['struct']).get_fdata()
+            TOF=nib.load(sample['TOF'])
+            LAB=nib.load(sample['label']).get_fdata()
+        
+        hea=TOF.header
+        aff=TOF.affine
+        LAB=np.round(LAB)
+        TOF=normalize(TOF.get_fdata())
+        MRI=normalize(MRI)
+        
+        connected_components=label(LAB)
+        
+        locations = potential_aneurysm(TOF)
+        
+        if not os.path.isdir(os.path.join(outfolder, sample['ID'])): os.mkdir(os.path.join(outfolder, sample['ID']))
+        
+        for n, loc in enumerate(locations):
+            if n<maxp:
+            
+                if os.path.isfile(os.path.join(outfolder, sample['ID'],'_STR_'+str(n)+'_'+si+'.nii.gz')): continue
+                S={'ID':sample['ID'],
+                   'struct':os.path.join( sample['ID'],'STR_'+str(n)+'_'+si+'.nii.gz'),
+                   'TOF':os.path.join( sample['ID'],'TOF_'+str(n)+'_'+si+'.nii.gz'),
+                   'labels':os.path.join( sample['ID'],'ane_'+str(n)+'_'+si+'.nii.gz'),
+                   
+                   'structB':os.path.join( sample['ID'],'STR_'+str(n)+'_'+si+'_big.nii.gz'),
+                   'TOFB':os.path.join( sample['ID'],'TOF_'+str(n)+'_'+si+'_big.nii.gz'),
+                   'labelsB':os.path.join( sample['ID'],'ane_'+str(n)+'_'+si+'_big.nii.gz')}
+                    
+            
+                low, high, _ = Patch(connected_components,size,None,loc)
+                lab=Carve(low,high,LAB)
+                mri=Carve(low,high,MRI)
+                tof=Carve(low,high,TOF)
+                
+                low, high, _ = Patch(connected_components,size*2,None,loc)
+                labB=Carve(low,high,LAB)
+                mriB=Carve(low,high,MRI)
+                tofB=Carve(low,high,TOF)
+                
+                
+                
+                zf=np.array(lab.shape)/np.array(labB.shape)
+                
+                labB=zoom(labB,zf,order=0)
+                mriB=zoom(mriB,zf,order=3)
+                tofB=zoom(tofB,zf,order=3)
+                
+                assert labB.shape==lab.shape
+                
+                for x in [lab,labB,mri,mriB,tof,tofB]:
+                    test=np.all(size==x.shape)
+                    
+                    if not test:
+                        
+                        print (low, high, loc, sample)
+                        return (low, high, loc, sample)
+                if ActuallySave:
+                    nib.save(nib.Nifti1Image(lab, aff, hea),os.path.join(outfolder, S['labels']))
+                    nib.save(nib.Nifti1Image(mri, aff, hea),os.path.join(outfolder, S['struct']))
+                    nib.save(nib.Nifti1Image(tof, aff, hea),os.path.join(outfolder, S['TOF']))
+                    
+                    nib.save(nib.Nifti1Image(labB, aff, hea),os.path.join(outfolder, S['labelsB']))
+                    nib.save(nib.Nifti1Image(mriB, aff, hea),os.path.join(outfolder, S['structB']))
+                    nib.save(nib.Nifti1Image(tofB, aff, hea),os.path.join(outfolder, S['TOFB']))
+                    datalist.append(S)
+                    
+                    
+                datalist.append(S)
+    if ActuallySave: pickle.dump(datalist,open(outlist,'wb'))
 
 def ExtractPatches(dataroot,outfolder,number,size=64,ActuallySave=True,volpriority='_res.nii.gz'):
     si=str(size)
