@@ -656,6 +656,16 @@ class Normalize():
         
         return sample
 
+class Flip():
+    def __init__(self,prob=0.5,axis=0,order={'sample':3,'labels':0}):
+        self.prob=prob
+        self.ax=axis
+        self.order=order
+    def __call__(self,sample):
+        if np.random.random()<self.prob:
+            for key in self.order:
+                sample[key]=np.flip(sample[key],axis=self.ax)
+        return sample
 
 class ToTensor():
     def __init__(self,device='cuda',order={'sample':3,'labels':0}):
