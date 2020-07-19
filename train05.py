@@ -28,7 +28,7 @@ DEF_PARAMS['Weights']=(0.001,1,0.5)
 DEF_PARAMS['SideBranchWeight']=0.1
 DEF_PARAMS['CCEweight']=1
 DEF_PARAMS['DiceWeight']=1
-DEF_PARAMS['WDecay']=0.001
+DEF_PARAMS['WDecay']=0.05
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 

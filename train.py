@@ -63,7 +63,7 @@ testsize=0.05
 Bsize=8
 workers=19
 MaxEpochs=np.inf
-Patience=10
+Patience=np.inf
 MaxTime=np.inf
 
 tensor=D.ToTensor(order={'HD':3,'labels':0,'LD':3})
@@ -79,7 +79,6 @@ if os.path.isfile(saveprogress):
     Model=Segmentation(N.U_Net,
                    savefile=saveprogress,
                    parameters=DEF_PARAMS,
-                   trainset=None,
                    testset=None)
 else:
     

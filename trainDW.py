@@ -24,11 +24,11 @@ DEF_PARAMS['PoolShape']=2
 # DEF_PARAMS['Upsample']=TransposeWrapper
 DEF_PARAMS['InterpMode']='trilinear'
 DEF_PARAMS['DownConvKernel']=3
-DEF_PARAMS['Weights']=(0.001,1,0.5)
+DEF_PARAMS['Weights']=(0.001,2,0.5)
 DEF_PARAMS['SideBranchWeight']=0.1
 DEF_PARAMS['CCEweight']=1
 DEF_PARAMS['DiceWeight']=1
-DEF_PARAMS['WDecay']=0.001
+DEF_PARAMS['WDecay']=0.01
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 

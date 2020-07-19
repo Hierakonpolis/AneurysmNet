@@ -10,9 +10,9 @@ import dataset as D
 from sklearn.model_selection import train_test_split
 
 DEF_PARAMS['FilterSize']=3
-DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
+DEF_PARAMS['FiltersNumHighRes']=np.array([16, 32, 64])
+DEF_PARAMS['FiltersNumLowRes']=np.array([8, 16, 32])
+DEF_PARAMS['FiltersDecoder']=np.array([64, 32, 16])
 DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
 DEF_PARAMS['InblockSkip']=False
@@ -24,19 +24,19 @@ DEF_PARAMS['PoolShape']=2
 # DEF_PARAMS['Upsample']=TransposeWrapper
 DEF_PARAMS['InterpMode']='trilinear'
 DEF_PARAMS['DownConvKernel']=3
-DEF_PARAMS['Weights']=(0.001,1,0.5)
+DEF_PARAMS['Weights']=(0.001,2,0.5)
 DEF_PARAMS['SideBranchWeight']=0.1
 DEF_PARAMS['CCEweight']=1
 DEF_PARAMS['DiceWeight']=1
-DEF_PARAMS['WDecay']=0.001
+DEF_PARAMS['WDecay']=0.01
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 
 dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
-name='U_Net_Final_res'
-
+name='U_NetLFTEST'
+fold=0
 dataroot='/scratch/project_2003143/patches64_resized'
 saveroot='/projappl/project_2003143'
 if len(sys.argv)>1:
@@ -60,7 +60,7 @@ savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
-Bsize=8
+Bsize=16
 workers=19
 MaxEpochs=np.inf
 Patience=np.inf

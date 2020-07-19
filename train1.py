@@ -10,9 +10,9 @@ import dataset as D
 from sklearn.model_selection import train_test_split
 
 DEF_PARAMS['FilterSize']=3
-DEF_PARAMS['FiltersNumHighRes']=np.array([32, 64, 64])
-DEF_PARAMS['FiltersNumLowRes']=np.array([32, 64, 64])
-DEF_PARAMS['FiltersDecoder']=np.array([32, 64, 64])
+DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
+DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
+DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
 DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
 DEF_PARAMS['InblockSkip']=False
@@ -28,21 +28,32 @@ DEF_PARAMS['Weights']=(0.001,1,0.5)
 DEF_PARAMS['SideBranchWeight']=0.1
 DEF_PARAMS['CCEweight']=1
 DEF_PARAMS['DiceWeight']=1
-DEF_PARAMS['WDecay']=0
+DEF_PARAMS['WDecay']=0.01
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 
-dataroot='/media/Olowoo/patches_redux'
+dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
-name='U_Net_Final'
+name='U_Net_Final_res'
 
-dataroot='/scratch/project_2003143/patches64'
+dataroot='/scratch/project_2003143/patches64_resized'
 saveroot='/projappl/project_2003143'
 if len(sys.argv)>1:
     dataroot=sys.argv[1]
     name=sys.argv[2]
+    fold=int(sys.argv[3])
 # groupfile='groups.p'
+
+folds={0:['10078F', '10042', '10072F', '10031', '10026'],
+       1:['10062B', '10045B', '10071F', '10078F', '10010'],
+       2:['10051B', '10070B', '10013', '10057B', '10076B'],
+       3:['10061F', '10003', '10076B', '10057B', '10065F'],
+       4:['10048F', '10047F', '10015', '10066B', '10016'],
+       5:['10070B', '10076B', '10076F', '10042', '10037']}
+
+fold=folds[fold]
+
 
 saveprogress=os.path.join(saveroot,name+'_prog.pth')
 savebest=os.path.join(saveroot,name+'_best.pth')
@@ -52,13 +63,15 @@ testsize=0.05
 Bsize=8
 workers=19
 MaxEpochs=np.inf
-Patience=10
+Patience=np.inf
 MaxTime=np.inf
 
 tensor=D.ToTensor(order={'HD':3,'labels':0,'LD':3})
 
 transforms= torchvision.transforms.Compose([tensor])
-dataset=D.PatchesDataset(dataroot, datafile,transforms)
+
+trainset=D.PatchesDataset(dataroot, datafile,transforms,fold,False)
+testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True)
 
 
 
@@ -66,9 +79,7 @@ if os.path.isfile(saveprogress):
     Model=Segmentation(N.U_Net,
                    savefile=saveprogress,
                    parameters=DEF_PARAMS,
-                   trainset=None,
                    testset=None)
-    train_idxs, test_idxs = Model.opt['trainset'], Model.opt['testset']
 else:
     
 
@@ -76,18 +87,16 @@ else:
 # rot=D.Rotate(5, probability=0.5,order={'sample':3,'labels':0})
 # norm=D.Normalize(order={'sample':3,'labels':0})
 
-    train_idxs, test_idxs = train_test_split(np.arange(len(dataset)), test_size=testsize)
     Model=Segmentation(N.U_Net,
                        savefile=None,
                        parameters=DEF_PARAMS,
-                       trainset=train_idxs,
-                       testset=test_idxs)
+                       testset=fold)
 
 
     
 
-trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(train_idxs),num_workers=workers)
-testloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, sampler=torch.utils.data.SubsetRandomSampler(test_idxs),num_workers=workers)
+trainloader=torch.utils.data.DataLoader(trainset, batch_size=Bsize, shuffle=True,num_workers=workers)
+testloader=torch.utils.data.DataLoader(testset, batch_size=Bsize, shuffle=True,num_workers=workers)
 
 
 
