@@ -400,7 +400,7 @@ def assign(LAB,value):
     a[LAB==value]=1
     return a
 
-def AddPatch(sampledict,root):
+def AddPatch(sampledict,root,Categories=3):
     #print(sampledict)
     #print(root)
     out={}
@@ -408,7 +408,8 @@ def AddPatch(sampledict,root):
     shape=[1]+list(LAB.shape)
     #print(shape)
     #print(LAB.shape)
-    labels=np.zeros([3]+list(LAB.shape))
+    
+    labels=np.zeros([Categories]+list(LAB.shape))
     #print(labels.shape)
     
     
@@ -416,9 +417,17 @@ def AddPatch(sampledict,root):
     # labels[1,:,:,:][LAB==1]=1
     # labels[2,:,:,:][LAB==2]=1
     
-    labels[0,:,:,:]=assign(LAB,0)
-    labels[1,:,:,:]=assign(LAB,1)
-    labels[2,:,:,:]=assign(LAB,2)
+    # for k in range(Categories):
+    
+    if Categories==3:
+        labels[0,:,:,:]=assign(LAB,0)
+        labels[1,:,:,:]=assign(LAB,1)
+        labels[2,:,:,:]=assign(LAB,2)
+    else:
+        bop=assign(LAB,1)
+        labels[1,:,:,:]=bop
+        labels[0,:,:,:]=1-bop
+    
     
     MRI_HD=nib.load(os.path.join(root,sampledict['struct'])).get_fdata().reshape(shape)
     MRI_LD=nib.load(os.path.join(root,sampledict['structB'])).get_fdata().reshape(shape)
@@ -562,7 +571,8 @@ class YoloDataset(Dataset):
         return sample
 
 class PatchesDataset(Dataset):
-    def __init__(self,patchesroot,databoxfile,transforms=None, Testsbj=[],Test=False):
+    def __init__(self,patchesroot,databoxfile,transforms=None, Testsbj=[],
+                 Test=False, Categories=3):
         dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
         if Test:
             self.dataset=[k for k in dataset if k['ID'] in Testsbj]
@@ -570,6 +580,7 @@ class PatchesDataset(Dataset):
             self.dataset=[k for k in dataset if k['ID'] not in Testsbj]
         self.path=patchesroot
         self.transforms=transforms
+        self.Categories=Categories
     def __len__(self):
         return len(self.dataset)
     
@@ -578,7 +589,7 @@ class PatchesDataset(Dataset):
         #print(idx)
         #print(self.path)
         
-        sample=AddPatch(self.dataset[idx],self.path)
+        sample=AddPatch(self.dataset[idx],self.path,self.Categories)
         
         if self.transforms:
             sample=self.transforms(sample)
