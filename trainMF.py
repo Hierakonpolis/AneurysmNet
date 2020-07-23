@@ -10,12 +10,12 @@ import dataset as D
 from sklearn.model_selection import train_test_split
 
 DEF_PARAMS['FilterSize']=3
-DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
-DEF_PARAMS['Categories']=int(2)
+DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 128, 128])
+DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 128, 128])
+DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 128, 128])
+DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
-DEF_PARAMS['InblockSkip']=False
+DEF_PARAMS['InblockSkip']=True
 DEF_PARAMS['ResidualConnections']=True
 DEF_PARAMS['PoolShape']=2
 # DEF_PARAMS['BNorm']=nn.BatchNorm3d
@@ -24,7 +24,7 @@ DEF_PARAMS['PoolShape']=2
 # DEF_PARAMS['Upsample']=TransposeWrapper
 DEF_PARAMS['InterpMode']='trilinear'
 DEF_PARAMS['DownConvKernel']=3
-DEF_PARAMS['Weights']=(0.001,1)
+DEF_PARAMS['Weights']=(0.001,1,0.5)
 DEF_PARAMS['SideBranchWeight']=0.1
 DEF_PARAMS['CCEweight']=1
 DEF_PARAMS['DiceWeight']=1
@@ -35,7 +35,7 @@ DEF_PARAMS['TransposeStride']=2
 dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
-name='U_Net_Final_res'
+name='U_al_res'
 
 dataroot='/scratch/project_2003143/patches64_resized'
 saveroot='/projappl/project_2003143'
@@ -44,7 +44,7 @@ if len(sys.argv)>1:
     name=sys.argv[2]
     fold=int(sys.argv[3])
 # groupfile='groups.p'
-
+fold=0
 folds={0:['10078F', '10042', '10072F', '10031', '10026'],
        1:['10062B', '10045B', '10071F', '10078F', '10010'],
        2:['10051B', '10070B', '10013', '10057B', '10076B'],
@@ -61,7 +61,7 @@ torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
 Bsize=8
-workers=19
+workers=23
 MaxEpochs=np.inf
 Patience=np.inf
 MaxTime=np.inf
@@ -70,13 +70,13 @@ tensor=D.ToTensor(order={'HD':3,'labels':0,'LD':3})
 
 transforms= torchvision.transforms.Compose([tensor])
 
-trainset=D.PatchesDataset(dataroot, datafile,transforms,fold,False,DEF_PARAMS['Categories'])
-testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True,DEF_PARAMS['Categories'])
+trainset=D.PatchesDataset(dataroot, datafile,transforms,fold,False)
+testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True)
 
 
 
 if os.path.isfile(saveprogress):
-    Model=Segmentation(N.U_Net,
+    Model=Segmentation(N.U_Net_DR,
                    savefile=saveprogress,
                    parameters=DEF_PARAMS,
                    testset=None)
@@ -107,4 +107,3 @@ Model.train(trainloader,
             max_time=MaxTime,
             saveprogress=saveprogress,
             savebest=savebest)
-

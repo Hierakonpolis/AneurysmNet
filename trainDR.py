@@ -64,7 +64,7 @@ testsize=0.05
 Bsize=8
 workers=19
 MaxEpochs=np.inf
-Patience=15#np.inf
+Patience=np.inf
 MaxTime=np.inf
 
 tensor=D.ToTensor(order={'HD':3,'labels':0,'LD':3})
