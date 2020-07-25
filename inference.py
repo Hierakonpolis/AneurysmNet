@@ -41,11 +41,9 @@ S='/media/Olowoo/ADAM_release_subjs/10054B'
 def SimpleDice(A,B):
     return np.sum(2*A*B)/(A.sum()+B.sum())
 
-save='/media/Olowoo/ADAMsaves/Unet_Inf_1_best.pth'
-###############
 
 # groupfile='groups.p'
-
+addy='_res.nii.gz'
 torch.set_default_tensor_type('torch.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
@@ -59,40 +57,52 @@ tensor=D.ToTensor(order={'HD':3,'LD':3})
 
 transforms= torchvision.transforms.Compose([tensor])
 
-
-
-Model=Segmentation(N.U_Net,
-               savefile=save,
-               parameters=DEF_PARAMS,
-               trainset=None,
-               testset=None)
-train_idxs, test_idxs = Model.opt['trainset'], Model.opt['testset']
-addy='_res.nii.gz'
-allres=[]
-for S1 in os.scandir('/media/Olowoo/ADAM_release_subjs'):
-    S=S1.path
-    TOF='/pre/TOF.nii.gz'
-    STR='/pre/struct_aligned.nii.gz'
-    REF='/aneurysms.nii.gz'
-    if os.path.isfile(S+TOF+addy):
-        TOF=TOF+addy
-        STR=STR+addy
-        REF=REF+addy
-    dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms)
-
-    trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
-
-    res=Model.inferece(trainloader,FinalThreshold=False)
-
-    ref=nib.load(S+REF).get_fdata()
-    ref[ref==2]=0
+base='/media/Olowoo/ADAMsaves/Unet'
+second=['2C','_Dec_0001','_Dec_005','DecRes001','DR','_DW','_Inf_0','_Inf_dec001','_LF','_Resized']
+third=['_bes_dice.pth','_best.pth','_prog.pth']
+dices=[]
+for net in second:
+    for metric, file in zip(['Dice','Loss','Last'],third):
+        print(net,metric)
+        save=base+net+file
+        if 'DR' or 'MF' in file:
+            modeltype=N.U_Net_DR
+        else:
+            modeltype=N.U_Net
+        
+        Model=Segmentation(modeltype,
+                       savefile=save,
+                       parameters=DEF_PARAMS,
+                       testset=None)
+        
+        allres=[]
+        allref=[]
+        for S1 in Model.opt['testset']:
+            S=os.path.join('/media/Olowoo/ADAM_release_subjs',S1)
+            
+            TOF='/pre/TOF.nii.gz'
+            STR='/pre/struct_aligned.nii.gz'
+            REF='/aneurysms.nii.gz'
+            if os.path.isfile(S+TOF+addy):
+                TOF=TOF+addy
+                STR=STR+addy
+                REF=REF+addy
+            dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms)
+        
+            trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
+        
+            res=Model.inferece(trainloader,FinalThreshold=False,PreThreshold=False)
+            
+            ref=nib.load(S+REF).get_fdata()
+            ref[ref==2]=0
+            
+            allres.append(res.detach().cpu().numpy())
+            allref.append(ref)
+        allres=np.array(allres)
+        allref=np.array(allref)
+        for thr in np.arange(0.1,1,0.1):
+            box=np.zeros_like(allres)
+            box[allres>=thr]=1
+            d=SimpleDice(box, allref)
+            dices.append((d,thr,metric,net))
     
-    forthis=[]
-    for thr in np.arange(0.1,1,0.1):
-        box=np.zeros_like(ref)
-        box[res>=thr]=1
-        forthis.append((thr,SimpleDice(box, ref)))
-    del dataset
-    del trainloader
-
-    allres.append(forthis)

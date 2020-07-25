@@ -346,7 +346,7 @@ class Segmentation():
             loss+=(DiceLoss(GT,x) + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights']))*self.opt['PAR']['SideBranchWeight']
         return loss
     
-    def inferece(self,inputloader,PreThreshold=True,FinalThreshold=True):
+    def inferece(self,inputloader,PreThreshold=True,FinalThreshold=0.5):
         samples=[]
         locations=[]
         self.network.eval()
@@ -380,7 +380,7 @@ class Segmentation():
         res=Rebuild(inputloader.dataset.vol, patches, centerpoints)
         
         if FinalThreshold:
-            res[res>0.5]=1
+            res[res>FinalThreshold]=1
             res[res!= 1]=0
         
         return res

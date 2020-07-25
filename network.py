@@ -440,7 +440,7 @@ class U_Net_DR(nn.Module):
     """
     
     def __init__(self,PARAMS=DEF_PARAMS):
-        super(U_Net,self).__init__()
+        super(U_Net_DR,self).__init__()
         self.PARAMS=PARAMS
         
         assert len(PARAMS['FiltersNumHighRes'])==len(PARAMS['FiltersNumLowRes'])
