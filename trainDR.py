@@ -31,6 +31,10 @@ DEF_PARAMS['DiceWeight']=1
 DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
+DEF_PARAMS['SobelWeight']=1
+DEF_PARAMS['VolLossWeight']=1
+DEF_PARAMS['SurfaceLossWeight']=1
+DEF_PARAMS['DropOut']=0.2
 
 dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'

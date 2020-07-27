@@ -31,7 +31,10 @@ DEF_PARAMS['DiceWeight']=1
 DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
-
+DEF_PARAMS['SobelWeight']=1
+DEF_PARAMS['VolLossWeight']=1
+DEF_PARAMS['SurfaceLossWeight']=1
+            
 dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'
 saveroot='/media/Olowoo/ADAMsaves/'
@@ -39,6 +42,8 @@ name='U_Net_Final_res'
 
 dataroot='/scratch/project_2003143/patches64_resized'
 saveroot='/projappl/project_2003143'
+fold=0
+
 if len(sys.argv)>1:
     dataroot=sys.argv[1]
     name=sys.argv[2]

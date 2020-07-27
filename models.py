@@ -20,16 +20,6 @@ def DiceLoss(Ytrue,Ypred):
                       torch.sum(torch.mul(Ypred,Ypred)) + torch.sum(torch.mul(Ytrue,Ytrue))+1)
     
     return DICE
-def CCE(Ytrue,Ypred,CatW):
-    shape=Ytrue.shape
-    CCE=-torch.mul(Ytrue,torch.log(Ypred + EPS))
-    W=torch.tensor(CatW).reshape((1,len(CatW),1,1,1)).expand(shape).float()
-    
-    W.requires_grad=False
-    
-    wCCE=torch.mul(W,CCE)
-    
-    return torch.mean(wCCE)
 
 def Dice(labels,Ypred):
     
@@ -39,6 +29,98 @@ def Dice(labels,Ypred):
     dice=2*(np.sum(labels*Ypred,(0,2,3,4))+1)/(np.sum((labels+Ypred),(0,2,3,4))+1)
     
     return dice
+
+L2=torch.nn.L2Loss()
+def VolLoss(labels,Ypred):
+    LA=torch.sum(labels,dim=(0,2,3,4))[1]
+    Y=torch.sum(Ypred,dim=(0,2,3,4))[1]
+    
+    
+    return L2(Y,LA)
+
+
+class SurfaceLoss():
+    def __init__(self, classs=1):
+        # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
+        self.idc = classs
+
+    def __call__(self, probs, dist_maps):
+
+        pc = probs[:, self.idc, ...].type(torch.cuda.FloatTensor)
+        dc = dist_maps[:, self.idc, ...].type(torch.cuda.FloatTensor)
+
+        multipled = torch.einsum("bcwh,bcwh->bcwh", pc, dc)
+
+        loss = multipled.mean()
+
+        return loss
+SL=SurfaceLoss()
+
+Z1=torch.tensor([[[ 1,  1, 1],
+                     [ 1,  2, 1],
+                     [ 1,  1, 1]],
+            
+                    [[ 0,  0, 0],
+                     [ 0,  0, 0],
+                     [ 0,  0, 0]],
+            
+                    [[ -1,  -1, -1],
+                     [ -1,  -2, -1],
+                     [ -1,  -1, -1]]],
+                     requires_grad=False)#.type(torch.DoubleTensor)
+    
+X1=torch.tensor([[[ 1,  0, -1],
+                     [ 1,  0, -1],
+                     [ 1,  0, -1]],
+            
+                    [[ 1,  0, -1],
+                     [ 2,  0, -2],
+                     [ 1,  0, -1]],
+            
+                    [[ 1,  0, -1],
+                     [ 1,  0, -1],
+                     [ 1,  0, -1]]],
+                     requires_grad=False)#.type(torch.DoubleTensor)
+Y1=torch.tensor([[[ 1,  1, 1],
+                     [ 0,  0, 0],
+                     [ -1,  -1, -1]],
+            
+                    [[ 1,  2, 1],
+                     [ 0,  0, 0],
+                     [ -1,  -2, -1]],
+            
+                    [[ 1,  1, 1],
+                     [ 0,  0, 0],
+                     [ -1,  -1, -1]]],
+                     requires_grad=False)#.type(torch.DoubleTensor)
+    
+def Sobel(Convolveme):
+    
+    X=X1.reshape(1,1,3,3,3).type(torch.cuda.FloatTensor).expand(Convolveme.shape[1], -1,-1,-1,-1)
+    Y=Y1.reshape(1,1,3,3,3).type(torch.cuda.FloatTensor).expand(Convolveme.shape[1], -1,-1,-1,-1)
+    
+    Z=Z1.reshape(1,1,3,3,3).type(torch.cuda.FloatTensor).expand(Convolveme.shape[1], -1,-1,-1,-1)
+    Xconv=torch.nn.functional.conv3d(Convolveme,X,groups=Convolveme.shape[1])
+    Yconv=torch.nn.functional.conv3d(Convolveme,Y,groups=Convolveme.shape[1])
+    Zconv=torch.nn.functional.conv3d(Convolveme,Z,groups=Convolveme.shape[1])
+    conv=torch.abs(torch.nn.functional.pad(Xconv+Yconv+Zconv,(1,1,1,1,1,1)))
+    conv[conv>0]=1
+    
+        
+    return conv
+
+def CCE(Ytrue,Ypred,CatW,SobW=0):
+    shape=Ytrue.shape
+    CCE=-torch.mul(Ytrue,torch.log(Ypred + EPS))
+    W=torch.tensor(CatW).reshape((1,len(CatW),1,1,1)).expand(shape).float()
+    W=W*(1+Sobel(Ytrue)*SobW)
+    
+    W.requires_grad=False
+    
+    wCCE=torch.mul(W,CCE)
+    
+    return torch.mean(wCCE)
+
 
 class YOLOr():
     
@@ -79,6 +161,8 @@ class YOLOr():
     def load(self,path):
         checkpoint=torch.load(path)
         self.opt=checkpoint['opt']
+        if 'SobelWeight' not in self.opt:
+            self.opt['SobelWeight']=0
         
         self.network=YoloRP(self.opt['PAR']).to(self.opt['device'])
         self.optimizer=RAdam(self.network.parameters(),weight_decay=self.opt['PAR']['WDecay'])
@@ -341,9 +425,16 @@ class Segmentation():
     def loss(self,sidebranches,output,GT):
         
         GT=GT.to(self.opt['device'])
-        loss=DiceLoss(GT,output) + self.opt['PAR']['CCEweight']*CCE(GT, output, self.opt['PAR']['Weights'])
+        loss=DiceLoss(GT,output) \
+            + self.opt['PAR']['CCEweight']*CCE(GT, output, self.opt['PAR']['Weights'],SobW=self.opt['PAR']['SobelWeight']) \
+            + self.opt['PAR']['VolLossWeight']*VolLoss(GT,output) \
+            + self.opt['PAR']['SurfaceLossWeight']*SL(output,GT)
+        
         for x in sidebranches:
-            loss+=(DiceLoss(GT,x) + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights']))*self.opt['PAR']['SideBranchWeight']
+            loss+=(DiceLoss(GT,x) \
+                + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights'],SobW=self.opt['PAR']['SobelWeight']))*self.opt['PAR']['SideBranchWeight'] \
+                + self.opt['PAR']['VolLossWeight']*VolLoss(GT,x)*self.opt['PAR']['SideBranchWeight'] \
+                + self.opt['PAR']['SurfaceLossWeight']*SL(output,GT)*self.opt['PAR']['SideBranchWeight']
         return loss
     
     def inferece(self,inputloader,PreThreshold=True,FinalThreshold=0.5):
@@ -365,7 +456,8 @@ class Segmentation():
         
         for k in tqdm.tqdm(range(len(samples)),desc='Patches...'):
             for K in np.split(samples[k], samples[k].shape[0],axis=0):
-                labels=K.reshape((3,64,64,64))
+                # print(K.shape)
+                labels=K.reshape((K.shape[1],64,64,64))
                 if PreThreshold:
                 
                     labels [np.where(labels== np.amax(labels,axis=0))] = 1

@@ -92,9 +92,9 @@ class OneVolPatchSet(Dataset):
         HR=np.concatenate([HRA,HRT],axis=0)
         LR=np.concatenate([LRA,LRT],axis=0)
         
-        sample={'HD':HR,
-                'LD':LR,
-                'loc':loc}
+        sample={'HD':np.copy(HR),
+                'LD':np.copy(LR),
+                'loc':self.locations[idx]}
         
         if self.transforms:
             sample=self.transforms(sample)

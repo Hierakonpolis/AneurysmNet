@@ -8,6 +8,7 @@ import numpy as np
 from network import DEF_PARAMS
 import network as N
 import nibabel as nib
+import matplotlib.pyplot as plt
 import dataset as D
 from sklearn.model_selection import train_test_split
 
@@ -58,51 +59,96 @@ tensor=D.ToTensor(order={'HD':3,'LD':3})
 transforms= torchvision.transforms.Compose([tensor])
 
 base='/media/Olowoo/ADAMsaves/Unet'
-second=['2C','_Dec_0001','_Dec_005','DecRes001','DR','_DW','_Inf_0','_Inf_dec001','_LF','_Resized']
+second=['2C','_Dec_0001','_Dec_005','DecRes001','_DW','_Inf_0','_Inf_dec001','_LF','_Resized']
+second=['DR']
 third=['_bes_dice.pth','_best.pth','_prog.pth']
-dices=[]
+dices=pickle.load(open('/media/Olowoo/ADAMsaves/saveres.p','rb'))
+Prehreshold=[True,False]
+results={}
+
+
 for net in second:
     for metric, file in zip(['Dice','Loss','Last'],third):
-        print(net,metric)
-        save=base+net+file
-        if 'DR' or 'MF' in file:
-            modeltype=N.U_Net_DR
-        else:
-            modeltype=N.U_Net
-        
-        Model=Segmentation(modeltype,
-                       savefile=save,
-                       parameters=DEF_PARAMS,
-                       testset=None)
-        
-        allres=[]
-        allref=[]
-        for S1 in Model.opt['testset']:
-            S=os.path.join('/media/Olowoo/ADAM_release_subjs',S1)
+        for PT in Prehreshold:
+            print(net,metric)
+            save=base+net+file
+            if 'DR' or 'MF' in file:
+                modeltype=N.U_Net_DR
+            else:
+                modeltype=N.U_Net
             
-            TOF='/pre/TOF.nii.gz'
-            STR='/pre/struct_aligned.nii.gz'
-            REF='/aneurysms.nii.gz'
-            if os.path.isfile(S+TOF+addy):
-                TOF=TOF+addy
-                STR=STR+addy
-                REF=REF+addy
-            dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms)
-        
-            trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
-        
-            res=Model.inferece(trainloader,FinalThreshold=False,PreThreshold=False)
+            Model=Segmentation(modeltype,
+                            savefile=save,
+                            parameters=None,
+                            testset=None)
             
-            ref=nib.load(S+REF).get_fdata()
-            ref[ref==2]=0
+            l=[x[1] for x in Model.opt['TestLoss']]
+            plt.plot(l)
+            plt.plot(Model.opt['TrainingLoss'])
+            plt.title(net+file)
+            plt.show()
+            allres=[]
+            allref=[]
+
+            for S1 in Model.opt['testset']:
+                S=os.path.join('/media/Olowoo/ADAM_release_subjs',S1)
+                
+                TOF='/pre/TOF.nii.gz'
+                STR='/pre/struct_aligned.nii.gz'
+                REF='/aneurysms.nii.gz'
+                if 'Res' in net:
+                    TOF=TOF+'_standard.nii.gz'
+                    STR=STR+'_standard.nii.gz'
+                    REF=REF+'_standard.nii.gz'
+                    print('!')
+                elif os.path.isfile(S+TOF+addy):
+                    TOF=TOF+addy
+                    STR=STR+addy
+                    REF=REF+addy
+                dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms)
             
-            allres.append(res.detach().cpu().numpy())
-            allref.append(ref)
-        allres=np.array(allres)
-        allref=np.array(allref)
-        for thr in np.arange(0.1,1,0.1):
-            box=np.zeros_like(allres)
-            box[allres>=thr]=1
-            d=SimpleDice(box, allref)
-            dices.append((d,thr,metric,net))
+                trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
+            
+            
+            
+                res=Model.inferece(trainloader,FinalThreshold=False,PreThreshold=PT)
+                
+                ref=nib.load(S+REF).get_fdata()
+                ref[ref==2]=0
+                
+                allres.append(res.reshape([1]+list(res.shape)))
+                allref.append(ref.reshape([1]+list(ref.shape)))
+            
+            
+            d0ice=[]
+            
+            for thr in np.arange(0,1.05,0.05):
+                for k in range(len(allres)):
+                    box=np.zeros_like(allres[k])
+                    box[allres[k]>=thr]=1
+                    d=SimpleDice(box, allref[k])
+                    d0ice.append(d)
+                dices.append((np.round(np.mean(d0ice),4),np.round(thr,3),metric,net,PT,save))
+                print(np.round(np.mean(d0ice),4),np.round(thr,3),metric,net,PT)
+                
+pickle.dump(dices,open('/media/Olowoo/ADAMsaves/saveres.p','wb'))
+
+name=''
+M=0
+K=''
+for k in dices:
+    if name!=k[3]: 
+        print(K)
+        name=k[3]
+        M=0
+        
+    if k[0]>M:
+        M=k[0]
+        K=k
+print(K)
+name=k[3]
+M=0
+
+    
+    
     
