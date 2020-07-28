@@ -59,8 +59,8 @@ tensor=D.ToTensor(order={'HD':3,'LD':3})
 transforms= torchvision.transforms.Compose([tensor])
 
 base='/media/Olowoo/ADAMsaves/Unet'
-second=['2C','_Dec_0001','_Dec_005','DecRes001','_DW','_Inf_0','_Inf_dec001','_LF','_Resized']
-second=['DR']
+second=['2C','_Dec_0001','_Dec_005','DecRes001','_DW','_Inf_0','_Inf_dec001','_LF','_Resized','DR']
+second=['_Resized']
 third=['_bes_dice.pth','_best.pth','_prog.pth']
 dices=pickle.load(open('/media/Olowoo/ADAMsaves/saveres.p','rb'))
 Prehreshold=[True,False]
