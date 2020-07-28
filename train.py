@@ -32,16 +32,15 @@ DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 DEF_PARAMS['SobelWeight']=1
-DEF_PARAMS['VolLossWeight']=1
 DEF_PARAMS['SurfaceLossWeight']=1
             
 dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'
-saveroot='/media/Olowoo/ADAMsaves/'
-name='U_Net_Final_res'
+saveroot='/tmp/ss'
+name='U_677_res'
 
-dataroot='/scratch/project_2003143/patches64_resized'
-saveroot='/projappl/project_2003143'
+# dataroot='/scratch/project_2003143/patches64_resized'
+# saveroot='/projappl/project_2003143'
 fold=0
 
 if len(sys.argv)>1:
@@ -65,7 +64,7 @@ savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
-Bsize=8
+Bsize=1#8
 workers=19
 MaxEpochs=np.inf
 Patience=np.inf

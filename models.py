@@ -30,14 +30,6 @@ def Dice(labels,Ypred):
     
     return dice
 
-L2=torch.nn.MSELoss()
-def VolLoss(labels,Ypred):
-    LA=torch.sum(labels,dim=(0,2,3,4))[1]
-    Y=torch.sum(Ypred,dim=(0,2,3,4))[1]
-    
-    
-    return L2(Y,LA)
-
 
 class SurfaceLoss():
     def __init__(self, classs=1):
@@ -427,13 +419,11 @@ class Segmentation():
         GT=GT.to(self.opt['device'])
         loss=DiceLoss(GT,output) \
             + self.opt['PAR']['CCEweight']*CCE(GT, output, self.opt['PAR']['Weights'],SobW=self.opt['PAR']['SobelWeight']) \
-            + self.opt['PAR']['VolLossWeight']*VolLoss(GT,output) \
             + self.opt['PAR']['SurfaceLossWeight']*SL(output,GT)
         
         for x in sidebranches:
             loss+=(DiceLoss(GT,x) \
                 + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights'],SobW=self.opt['PAR']['SobelWeight']))*self.opt['PAR']['SideBranchWeight'] \
-                + self.opt['PAR']['VolLossWeight']*VolLoss(GT,x)*self.opt['PAR']['SideBranchWeight'] \
                 + self.opt['PAR']['SurfaceLossWeight']*SL(output,GT)*self.opt['PAR']['SideBranchWeight']
         return loss
     
