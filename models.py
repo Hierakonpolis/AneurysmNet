@@ -30,7 +30,7 @@ def Dice(labels,Ypred):
     
     return dice
 
-L2=torch.nn.L2Loss()
+L2=torch.nn.MSELoss()
 def VolLoss(labels,Ypred):
     LA=torch.sum(labels,dim=(0,2,3,4))[1]
     Y=torch.sum(Ypred,dim=(0,2,3,4))[1]
