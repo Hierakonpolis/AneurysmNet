@@ -64,7 +64,7 @@ savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
-Bsize=1#8
+Bsize=8
 workers=19
 MaxEpochs=np.inf
 Patience=np.inf

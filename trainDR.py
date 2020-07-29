@@ -91,7 +91,7 @@ else:
 # rot=D.Rotate(5, probability=0.5,order={'sample':3,'labels':0})
 # norm=D.Normalize(order={'sample':3,'labels':0})
 
-    Model=Segmentation(N.U_Net,
+    Model=Segmentation(N.U_Net_DR,
                        savefile=None,
                        parameters=DEF_PARAMS,
                        testset=fold)

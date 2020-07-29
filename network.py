@@ -645,6 +645,104 @@ class U_Net(nn.Module):
         out=self.softmax(self.Classifier(decoder[0]))
         
         return [], out
+    
+class U_Net_Single(nn.Module):
+    """
+    Network definition, based on unpooling
+    """
+    
+    def __init__(self,PARAMS=DEF_PARAMS):
+        super(U_Net,self).__init__()
+        self.PARAMS=PARAMS
+        
+        assert len(PARAMS['FiltersNumHighRes'])==len(PARAMS['FiltersNumLowRes'])
+        assert len(PARAMS['FiltersDecoder'])==len(PARAMS['FiltersNumLowRes'])
+        
+        if PARAMS['InblockSkip']:
+            ConvBlock=SkipConvBlock
+        else:
+            ConvBlock=NoSkipConvBlock
+        
+        self.encoder=nn.ModuleDict()
+        self.decoder=nn.ModuleDict()
+        
+        
+        self.encoder['DenseHigh'+str(0)]=ConvBlock(2,PARAMS['FiltersNumHighRes'][0],PAR=PARAMS)
+        
+        # self.encoder['PoolHigh'+str(0)]=PARAMS['Downsample'](PARAMS['PoolShape'],return_indices=True)
+        # self.encoder['PoolLow'+str(0)]=PARAMS['Downsample'](PARAMS['PoolShape'],return_indices=True)
+        
+        for i in range(1,len(PARAMS['FiltersNumLowRes'])):
+            self.encoder['PoolHigh'+str(i)]=PARAMS['Downsample'](PARAMS['FiltersNumHighRes'][i-1],PAR=PARAMS)
+            
+            self.encoder['DenseHigh'+str(i)]=ConvBlock(PARAMS['FiltersNumHighRes'][i-1],PARAMS['FiltersNumHighRes'][i],PAR=PARAMS)
+            
+            
+        
+        self.decoder['Dense'+str(i)]=ConvBlock(PARAMS['FiltersNumHighRes'][i],
+                                              PARAMS['FiltersDecoder'][i],
+                                              PAR=PARAMS)
+        
+        
+        self.decoder['Up'+str(i)]=PARAMS['Upsample'](PARAMS['FiltersDecoder'][i],PARAMS['FiltersDecoder'][i],PAR=PARAMS)
+        
+        
+        
+        for i in reversed(range(1,len(PARAMS['FiltersDecoder'])-1)):
+            
+            self.decoder['Dense'+str(i)]=ConvBlock(PARAMS['FiltersNumHighRes'][i]+PARAMS['FiltersDecoder'][i+1],
+                                              PARAMS['FiltersDecoder'][i],
+                                              PAR=PARAMS)
+            
+            
+            self.decoder['Up'+str(i)]=PARAMS['Upsample'](PARAMS['FiltersDecoder'][i],PARAMS['FiltersDecoder'][i],PAR=PARAMS)
+            
+            
+        
+        self.decoder['Dense'+str(0)]=ConvBlock(PARAMS['FiltersNumHighRes'][0]+PARAMS['FiltersDecoder'][1],
+                                              PARAMS['FiltersDecoder'][0],
+                                              PAR=PARAMS)
+        
+        self.Classifier=PARAMS['Conv'](PARAMS['FiltersDecoder'][0],PARAMS['Categories'],1) #classifier layer
+        self.softmax=nn.Softmax(dim=1)
+        
+            
+            
+    def forward(self,MRI_high,MRI_low):
+        
+        denseA={}
+        decoder={}
+        Unpool={}
+        
+        denseA[0] = self.encoder['DenseHigh'+str(0)](MRI_high.cuda())
+        
+        
+        
+        for i in range(1,len(self.PARAMS['FiltersNumHighRes'])):
+            
+            denseA[i] = self.encoder['PoolHigh'+str(i)](denseA[i-1])
+            
+            denseA[i] = self.encoder['DenseHigh'+str(i)](denseA[i])
+        
+        
+        
+        cat=denseA[i]
+        decoder[i] = self.decoder['Dense'+str(i)](cat)
+        
+        Unpool[i]=self.decoder['Up'+str(i)](decoder[i],Upsize(decoder[i],denseA[i-1]))
+        
+        for i in reversed(range(1,len(self.PARAMS['FiltersNumHighRes'])-1)):
+            cat=denseA[i]
+            decoder[i] = self.decoder['Dense'+str(i)](cat)
+            
+            Unpool[i]=self.decoder['Up'+str(i)](decoder[i],Upsize(decoder[i],denseA[i-1]))
+            
+        cat=denseA[0]
+        decoder[0] = self.decoder['Dense'+str(0)](cat)
+        
+        out=self.softmax(self.Classifier(decoder[0]))
+        
+        return [], out
 
 class U_Block(nn.Module):
     """
