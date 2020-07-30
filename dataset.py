@@ -57,10 +57,20 @@ def AddSampleFilePaths(folder,foldersdict):
 
 
 class OneVolPatchSet(Dataset):
-    def __init__(self,volumepath,anatomy,transforms=None):
-        self.vol=normalize(nib.load(volumepath).get_fdata())
-        self.anatomy=normalize(nib.load(anatomy).get_fdata())
+    def __init__(self,volumepath,anatomy,transforms=None,Labels=None):
+        
+        if type(volumepath) == str:
+            v=nib.load(volumepath).get_fdata()
+            a=nib.load(anatomy).get_fdata()
+        elif type(volumepath) == nib.nifti1.Nifti1Image:
+            v=volumepath.get_fdata()
+            a=anatomy.get_fdata()
+        self.vol=normalize(v)
+        self.anatomy=normalize(a)
         self.locations=potential_aneurysm(self.vol)
+        self.GetLabels=Labels
+        if type(Labels) == str:
+            self.GT=nib.load(Labels).get_fdata()
         
         # self.dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
         # self.path=patchesroot
@@ -92,55 +102,19 @@ class OneVolPatchSet(Dataset):
         HR=np.concatenate([HRA,HRT],axis=0)
         LR=np.concatenate([LRA,LRT],axis=0)
         
+        
         sample={'HD':np.copy(HR),
                 'LD':np.copy(LR),
                 'loc':self.locations[idx]}
+        
+        if type(self.GetLabels)==str:
+            sample['L']=Carve(low,high,self.GT)
         
         if self.transforms:
             sample=self.transforms(sample)
         
         return sample
 
-
-def AddToYolo(SamplePaths):
-    
-    if os.path.isfile(SamplePaths['struct']+'_res.nii.gz'):
-        MRI=nib.load(SamplePaths['struct']+'_res.nii.gz').get_fdata()
-        TOF=nib.load(SamplePaths['TOF']+'_res.nii.gz').get_fdata()
-        LAB=nib.load(SamplePaths['label']+'_res.nii.gz').get_fdata()
-    else:
-        
-        MRI=nib.load(SamplePaths['struct']).get_fdata()
-        TOF=nib.load(SamplePaths['TOF']).get_fdata()
-        LAB=nib.load(SamplePaths['label']).get_fdata()
-    
-    ID = SamplePaths['ID']
-    
-    shape=list(MRI.shape)
-    
-    xg, yg, zg = np.meshgrid(range(shape[0]),range(shape[1]),range(shape[2]),indexing='ij')
-    xg=xg/shape[0]
-    yg=yg/shape[1]
-    zg=zg/shape[2]
-    
-    shape=[1]+shape
-    
-    coords=np.concatenate((xg.reshape(shape), yg.reshape(shape), zg.reshape(shape)),axis=0)
-    
-    MRI=MRI.reshape(shape)
-    TOF=TOF.reshape(shape)
-    
-    LAB[LAB!=0]=1
-    LAB=LAB.reshape(shape)
-    
-    IN = np.concatenate([MRI,TOF],axis=0)
-    
-    out={'ID':ID,
-         'coords':coords,
-         'sample':IN,
-         'labels':LAB}
-    
-    return out
 
 def Rebuild(RefVol,patches,locations,size=64):
     new=np.zeros_like(RefVol)
@@ -237,6 +211,7 @@ def NewPatches(dataroot,outfolder,size=64,ActuallySave=True,volpriority='_res.ni
         locations = potential_aneurysm(TOF)
         
         if not os.path.isdir(os.path.join(outfolder, sample['ID'])): os.mkdir(os.path.join(outfolder, sample['ID']))
+     
         
         for n, loc in enumerate(locations):
             if n<maxp:
@@ -279,6 +254,8 @@ def NewPatches(dataroot,outfolder,size=64,ActuallySave=True,volpriority='_res.ni
                         
                         print (low, high, loc, sample)
                         return (low, high, loc, sample)
+                
+                S['positive']=True if lab.sum(lab==1)>0 else False
                 if ActuallySave:
                     nib.save(nib.Nifti1Image(lab, aff, hea),os.path.join(outfolder, S['labels']))
                     nib.save(nib.Nifti1Image(mri, aff, hea),os.path.join(outfolder, S['struct']))
@@ -489,10 +466,54 @@ def TheAllResizer(datapath,xysize=0.35714287,zsize=0.5):
                 H['pixdim'][2]=xysize
                 H['pixdim'][3]=zsize
                 
-                newnii=nib.Nifti1Image(newvol, ni.affine,header=ni.header)
+                newnii=nib.Nifti1Image(newvol, ni.affine,header=H)
                 nib.save(newnii, p+'_standard.nii.gz')
             t.update()
+
+def InResizer(TOFp,MRIp,xysize=0.35714287,zsize=0.5):
+    """
+    560 scelto per pixdim: 1024*0.1953125/0.35714287
+
+    """
+    defsize=np.array((xysize,xysize,zsize))
+    
+                
+    MRI=nib.load(MRIp)
+    TOF=nib.load(TOFp)
+    nibs=[MRI,TOF]
+    outs=[]
+    
+    for ni in nibs:
         
+        H=ni.header
+        OrigSize=np.array((H['pixdim'][1],H['pixdim'][2],H['pixdim'][3]))
+        shapefactor=OrigSize/defsize
+        newvol=zoom(ni.get_fdata(),shapefactor,order=3)
+        H['dim'][1]=newvol.shape[0]
+        H['dim'][2]=newvol.shape[1]
+        H['dim'][3]=newvol.shape[2]
+        H['pixdim'][1]=xysize
+        H['pixdim'][2]=xysize
+        H['pixdim'][3]=zsize
+        
+        newnii=nib.Nifti1Image(newvol, ni.affine,header=H)
+        outs.append(newnii)
+    return outs,OrigSize
+
+def OutResizer(vol,OrigSize,ResizedTOF,order=0):
+    OrigSize
+    H=ResizedTOF.header
+    ResizedSize=np.array((H['pixdim'][1],H['pixdim'][2],H['pixdim'][3])) 
+    shapefactor=ResizedSize/OrigSize
+    newvol=zoom(vol,shapefactor,order=order)
+    H['dim'][1]=newvol.shape[0]
+    H['dim'][2]=newvol.shape[1]
+    H['dim'][3]=newvol.shape[2]
+    H['pixdim'][1]=OrigSize[0]
+    H['pixdim'][2]=OrigSize[1]
+    H['pixdim'][3]=OrigSize[2]
+    newnii=nib.Nifti1Image(newvol, ResizedTOF.affine,header=H)
+    return newnii
 
 def YourFriendlyResizer(datapath,standardsize=560,standardsize2=128):
     """
@@ -545,30 +566,6 @@ def listdata(datafolder):
         AddSampleFilePaths(sample.path,dataset)
         
     return dataset
-
-class YoloDataset(Dataset):
-    def __init__(self,datafolder,transforms=None,IDs=None):
-        samples=listdata(datafolder)
-        self.transforms=transforms
-        self.dataset=[]
-        
-        for ID, sample in samples.items():
-            
-            if IDs and (ID not in IDs): continue
-        
-            self.dataset.append(sample)
-    
-    
-    def __len__(self):
-        return len(self.dataset)
-    
-    def __getitem__(self,idx):
-        sample=AddToYolo(self.dataset[idx])
-        
-        if self.transforms:
-            sample=self.transforms(sample)
-        
-        return sample
 
 class PatchesDataset(Dataset):
     def __init__(self,patchesroot,databoxfile,transforms=None, Testsbj=[],

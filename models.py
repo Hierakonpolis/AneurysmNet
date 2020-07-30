@@ -274,6 +274,12 @@ class Segmentation():
             for K in np.split(samples[k], samples[k].shape[0],axis=0):
                 # print(K.shape)
                 labels=K.reshape((K.shape[1],64,64,64))
+                
+                if type(PreThreshold)==float:
+                    L=labels[1,:,:,:]
+                    L[L>PreThreshold]=1
+                    labels[1,:,:,:]=L
+                
                 if PreThreshold:
                 
                     labels [np.where(labels== np.amax(labels,axis=0))] = 1
