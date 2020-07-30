@@ -47,7 +47,7 @@ for net in nets:
 out=D.OutResizer(I,OrigSize,TOFnii,order=0)
 nib.save(out,'/home/cat/ADAM_release_subjs/10072F/test.nii.gz')
        
-import tqdm         
+import tqdm
 l=[]
 for k in tqdm.tqdm(dataset):
     if k['L'].sum()>0:

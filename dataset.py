@@ -569,8 +569,9 @@ def listdata(datafolder):
 
 class PatchesDataset(Dataset):
     def __init__(self,patchesroot,databoxfile,transforms=None, Testsbj=[],
-                 Test=False, Categories=3):
+                 Test=False, Categories=3,NegRatio=0.7):
         dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
+        self.NegRatio=NegRatio
         if Test:
             self.dataset=[k for k in dataset if k['ID'] in Testsbj]
         else:
@@ -578,14 +579,42 @@ class PatchesDataset(Dataset):
         self.path=patchesroot
         self.transforms=transforms
         self.Categories=Categories
+        if 'positive' in self.dataset[0]:
+            self.NewMode=True
+            self.PosIDX=[]
+            self.NegIDX=[]
+            for idx, k in enumerate(self.dataset):
+                if k['positive']:
+                    self.PosIDX.append(idx)
+                else:
+                    self.NegIDX.append(idx)
+                    
+            
+        else:
+            self.NewMode=False
+                
+    def scamblenegs(self):
+        if self.NewMode:
+            S=int(len(self.PosIDX)*self.NegRatio)
+            negs=np.random.choice(self.NegIDX,size=S,replace=False)
+            negs=list(negs)
+            self.indexes=self.PosIDX+negs
+            
+                
     def __len__(self):
+        if self.NewMode: return len(self.indexes)
+        
         return len(self.dataset)
     
-    def __getitem__(self,idx):
+    def __getitem__(self,I):
         #print(self.dataset[idx])
         #print(idx)
         #print(self.path)
-        
+        if self.NewMode: 
+            idx = self.indexes(I)
+        else:
+            idx = I
+            
         sample=AddPatch(self.dataset[idx],self.path,self.Categories)
         
         if self.transforms:

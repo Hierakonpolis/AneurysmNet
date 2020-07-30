@@ -63,7 +63,7 @@ second=['2C','_Dec_0001','_Dec_005','DecRes001','_DW','_Inf_0','_Inf_dec001','_L
 second=['_Resized']
 third=['_bes_dice.pth','_best.pth','_prog.pth']
 dices=pickle.load(open('/media/Olowoo/ADAMsaves/saveres.p','rb'))
-Prehreshold=[0.2]
+Prehreshold=[True,False]
 results={}
 
 

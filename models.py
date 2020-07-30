@@ -221,6 +221,7 @@ class Segmentation():
             start=time.time()
             print('Epoch',self.opt['Epoch'],flush=True)
             trainloss = self.train_one_epoch(train_dataloader)
+            train_dataloader.dataset.scamblenegs()
             print('Training set running mean loss: ',trainloss,flush=True)
             
             testloss, dice = self.test(test_dataloader)
