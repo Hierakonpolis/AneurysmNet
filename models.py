@@ -137,7 +137,7 @@ class Segmentation():
             self.network=network(self.opt['PAR']).to(self.opt['device'])
             self.optimizer=RAdam(self.network.parameters(),weight_decay=self.opt['PAR']['WDecay'])
             
-        self.lrscheduler=torch.optim.scheduler.StepLR(self.optimizer,step_size=10,gamma=0.5)
+        self.lrscheduler=torch.optim.lr_scheduler.StepLR(self.optimizer,step_size=10,gamma=0.5)
     
     def save(self,path):
         
