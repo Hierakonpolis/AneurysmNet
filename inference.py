@@ -87,67 +87,67 @@ for net in second:
             plt.plot(Model.opt['TrainingLoss'])
             plt.title(net+file)
             plt.show()
-            allres=[]
-            allref=[]
+            # allres=[]
+            # allref=[]
 
-            for S1 in Model.opt['testset']:
-                S=os.path.join('/media/Olowoo/ADAM_release_subjs',S1)
+            # for S1 in Model.opt['testset']:
+            #     S=os.path.join('/media/Olowoo/ADAM_release_subjs',S1)
                 
-                TOF='/pre/TOF.nii.gz'
-                STR='/pre/struct_aligned.nii.gz'
-                REF='/aneurysms.nii.gz'
-                if 'Res' in net:
-                    TOF=TOF+'_standard.nii.gz'
-                    STR=STR+'_standard.nii.gz'
-                    REF=REF+'_standard.nii.gz'
-                    print('!')
-                elif os.path.isfile(S+TOF+addy):
-                    TOF=TOF+addy
-                    STR=STR+addy
-                    REF=REF+addy
-                dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms)
+            #     TOF='/pre/TOF.nii.gz'
+            #     STR='/pre/struct_aligned.nii.gz'
+            #     REF='/aneurysms.nii.gz'
+            #     if 'Res' in net:
+            #         TOF=TOF+'_standard.nii.gz'
+            #         STR=STR+'_standard.nii.gz'
+            #         REF=REF+'_standard.nii.gz'
+            #         print('!')
+            #     elif os.path.isfile(S+TOF+addy):
+            #         TOF=TOF+addy
+            #         STR=STR+addy
+            #         REF=REF+addy
+            #     dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms)
             
-                trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
+            #     trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
             
             
             
-                res=Model.inferece(trainloader,FinalThreshold=False,PreThreshold=PT)
+            #     res=Model.inferece(trainloader,FinalThreshold=False,PreThreshold=PT)
                 
-                ref=nib.load(S+REF).get_fdata()
-                ref[ref==2]=0
+            #     ref=nib.load(S+REF).get_fdata()
+            #     ref[ref==2]=0
                 
-                allres.append(res.reshape([1]+list(res.shape)))
-                allref.append(ref.reshape([1]+list(ref.shape)))
+            #     allres.append(res.reshape([1]+list(res.shape)))
+            #     allref.append(ref.reshape([1]+list(ref.shape)))
             
             
-            d0ice=[]
+            # d0ice=[]
             
-            for thr in np.arange(0,1.05,0.05):
-                for k in range(len(allres)):
-                    box=np.zeros_like(allres[k])
-                    box[allres[k]>=thr]=1
-                    d=SimpleDice(box, allref[k])
-                    d0ice.append(d)
-                dices.append((np.round(np.mean(d0ice),4),np.round(thr,3),metric,net,PT,save))
-                print(np.round(np.mean(d0ice),4),np.round(thr,3),metric,net,PT)
+            # for thr in np.arange(0,1.05,0.05):
+            #     for k in range(len(allres)):
+            #         box=np.zeros_like(allres[k])
+            #         box[allres[k]>=thr]=1
+            #         d=SimpleDice(box, allref[k])
+            #         d0ice.append(d)
+            #     dices.append((np.round(np.mean(d0ice),4),np.round(thr,3),metric,net,PT,save))
+            #     print(np.round(np.mean(d0ice),4),np.round(thr,3),metric,net,PT)
                 
-pickle.dump(dices,open('/media/Olowoo/ADAMsaves/saveres.p','wb'))
+# pickle.dump(dices,open('/media/Olowoo/ADAMsaves/saveres.p','wb'))
 
-name=''
-M=0
-K=''
-for k in dices:
-    if name!=k[3]: 
-        print(K)
-        name=k[3]
-        M=0
+# name=''
+# M=0
+# K=''
+# for k in dices:
+#     if name!=k[3]: 
+#         print(K)
+#         name=k[3]
+#         M=0
         
-    if k[0]>M:
-        M=k[0]
-        K=k
-print(K)
-name=k[3]
-M=0
+#     if k[0]>M:
+#         M=k[0]
+#         K=k
+# print(K)
+# name=k[3]
+# M=0
 
     
     
