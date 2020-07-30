@@ -31,18 +31,18 @@ DEF_PARAMS['DiceWeight']=1
 DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
-DEF_PARAMS['SobelWeight']=1
-DEF_PARAMS['SurfaceLossWeight']=1
-            
+DEF_PARAMS['SobelWeight']=0
+DEF_PARAMS['SurfaceLossWeight']=0
+DEF_PARAMS['DropOut']=0.2
+
 dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'
-saveroot='/tmp/ss'
-name='U_677_res'
+saveroot='/media/Olowoo/ADAMsaves/'
+name='U_Net_Final_res'
 
 dataroot='/scratch/project_2003143/patches64_resized'
 saveroot='/projappl/project_2003143'
 fold=0
-
 if len(sys.argv)>1:
     dataroot=sys.argv[1]
     name=sys.argv[2]
@@ -80,7 +80,7 @@ testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True)
 
 
 if os.path.isfile(saveprogress):
-    Model=Segmentation(N.U_Net,
+    Model=Segmentation(N.U_Net_DR,
                    savefile=saveprogress,
                    parameters=DEF_PARAMS,
                    testset=None)
@@ -91,7 +91,7 @@ else:
 # rot=D.Rotate(5, probability=0.5,order={'sample':3,'labels':0})
 # norm=D.Normalize(order={'sample':3,'labels':0})
 
-    Model=Segmentation(N.U_Net,
+    Model=Segmentation(N.U_Net_DR,
                        savefile=None,
                        parameters=DEF_PARAMS,
                        testset=fold)

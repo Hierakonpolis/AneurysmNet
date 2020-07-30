@@ -26,12 +26,12 @@ DEF_PARAMS['InterpMode']='trilinear'
 DEF_PARAMS['DownConvKernel']=3
 DEF_PARAMS['Weights']=(0.001,1,0.5)
 DEF_PARAMS['SideBranchWeight']=0.1
-DEF_PARAMS['CCEweight']=1
+DEF_PARAMS['CCEweight']=0
 DEF_PARAMS['DiceWeight']=1
 DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
-DEF_PARAMS['SobelWeight']=1
+DEF_PARAMS['SobelWeight']=0
 DEF_PARAMS['SurfaceLossWeight']=1
             
 dataroot='/media/Olowoo/ADAM_eqpatch'
