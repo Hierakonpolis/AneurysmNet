@@ -653,7 +653,7 @@ class U_Net_Single(nn.Module):
     """
     
     def __init__(self,PARAMS=DEF_PARAMS):
-        super(U_Net,self).__init__()
+        super(U_Net_Single,self).__init__()
         self.PARAMS=PARAMS
         
         assert len(PARAMS['FiltersNumHighRes'])==len(PARAMS['FiltersNumLowRes'])
@@ -722,23 +722,19 @@ class U_Net_Single(nn.Module):
         for i in range(1,len(self.PARAMS['FiltersNumHighRes'])):
             
             denseA[i] = self.encoder['PoolHigh'+str(i)](denseA[i-1])
-            
+            print('1',i)
             denseA[i] = self.encoder['DenseHigh'+str(i)](denseA[i])
-        
         
         
         cat=denseA[i]
         decoder[i] = self.decoder['Dense'+str(i)](cat)
-        
         Unpool[i]=self.decoder['Up'+str(i)](decoder[i],Upsize(decoder[i],denseA[i-1]))
-        
         for i in reversed(range(1,len(self.PARAMS['FiltersNumHighRes'])-1)):
-            cat=denseA[i]
+            cat=torch.cat([denseA[i],Unpool[i+1]],dim=1)
             decoder[i] = self.decoder['Dense'+str(i)](cat)
-            
             Unpool[i]=self.decoder['Up'+str(i)](decoder[i],Upsize(decoder[i],denseA[i-1]))
             
-        cat=denseA[0]
+        cat=torch.cat([denseA[0],Unpool[1]],dim=1)
         decoder[0] = self.decoder['Dense'+str(0)](cat)
         
         out=self.softmax(self.Classifier(decoder[0]))
