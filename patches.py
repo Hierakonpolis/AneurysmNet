@@ -11,7 +11,7 @@ import dataset as D
 
 
 dataroot='/scratch/project_2003143/ADAM_release_subjs'
-dataroot='/media/Olowoo/ADAM_release_subjs'
+# dataroot='/media/Olowoo/ADAM_release_subjs'
 print('Resizing')
 # D.YourFriendlyResizer(dataroot)
 # D.TheAllResizer(dataroot)
