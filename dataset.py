@@ -12,7 +12,7 @@ a label image with labels:
 
 """
 
-import os, csv, warnings, itertools, torch, shutil, tqdm, pickle
+import os, csv, torch, tqdm, pickle
 import nibabel as nib
 from scipy.ndimage.interpolation import shift, zoom
 from scipy.ndimage import rotate
@@ -255,7 +255,9 @@ def NewPatches(dataroot,outfolder,size=64,ActuallySave=True,volpriority='_res.ni
                         print (low, high, loc, sample)
                         return (low, high, loc, sample)
                 
-                S['positive']=True if lab.sum(lab==1)>0 else False
+                
+                
+                S['positive']=True if len(lab[lab==1])>0 else False
                 if ActuallySave:
                     nib.save(nib.Nifti1Image(lab, aff, hea),os.path.join(outfolder, S['labels']))
                     nib.save(nib.Nifti1Image(mri, aff, hea),os.path.join(outfolder, S['struct']))

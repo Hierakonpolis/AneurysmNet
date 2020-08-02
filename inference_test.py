@@ -60,7 +60,7 @@ transforms= torchvision.transforms.Compose([tensor])
 
 base='/media/Olowoo/ADAMsaves/Unet'
 second=['2C','_Dec_0001','_Dec_005','DecRes001','_DW','_Inf_0','_Inf_dec001','_LF','_Resized','DR']
-second=['_Resized']
+second=['SurfLoss','Sobel']
 third=['_bes_dice.pth','_best.pth','_prog.pth']
 dices=pickle.load(open('/media/Olowoo/ADAMsaves/saveres.p','rb'))
 Prehreshold=[True,False]
@@ -96,15 +96,15 @@ for net in second:
                 TOF='/pre/TOF.nii.gz'
                 STR='/pre/struct_aligned.nii.gz'
                 REF='/aneurysms.nii.gz'
-                if 'Res' in net:
-                    TOF=TOF+'_standard.nii.gz'
-                    STR=STR+'_standard.nii.gz'
-                    REF=REF+'_standard.nii.gz'
-                    print('!')
-                elif os.path.isfile(S+TOF+addy):
-                    TOF=TOF+addy
-                    STR=STR+addy
-                    REF=REF+addy
+                # if 'Res' in net:
+                TOF=TOF+'_standard.nii.gz'
+                STR=STR+'_standard.nii.gz'
+                REF=REF+'_standard.nii.gz'
+                    # print('!')
+                # if os.path.isfile(S+TOF+addy):
+                #     TOF=TOF+addy
+                #     STR=STR+addy
+                #     REF=REF+addy
                 dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms)
             
                 trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
@@ -131,7 +131,7 @@ for net in second:
                 dices.append((np.round(np.mean(d0ice),4),np.round(thr,3),metric,net,PT,save))
                 print(np.round(np.mean(d0ice),4),np.round(thr,3),metric,net,PT)
                 
-# pickle.dump(dices,open('/media/Olowoo/ADAMsaves/saveres.p','wb'))
+pickle.dump(dices,open('/media/Olowoo/ADAMsaves/saveres.p','wb'))
 
 name=''
 M=0
