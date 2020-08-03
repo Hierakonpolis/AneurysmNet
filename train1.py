@@ -21,7 +21,7 @@ DEF_PARAMS['PoolShape']=2
 # DEF_PARAMS['BNorm']=nn.BatchNorm3d
 # DEF_PARAMS['Conv']=nn.Conv3d
 # DEF_PARAMS['Downsample']=PoolWrapper
-# DEF_PARAMS['Upsample']=TransposeWrapper
+DEF_PARAMS['Upsample']=N.InterpWrapper
 DEF_PARAMS['InterpMode']='trilinear'
 DEF_PARAMS['DownConvKernel']=3
 DEF_PARAMS['Weights']=(0.001,1,0.5)
@@ -31,7 +31,7 @@ DEF_PARAMS['DiceWeight']=1
 DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
-DEF_PARAMS['SobelWeight']=1
+DEF_PARAMS['SobelWeight']=0
 DEF_PARAMS['VolLossWeight']=0
 DEF_PARAMS['SurfaceLossWeight']=0
             

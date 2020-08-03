@@ -41,7 +41,7 @@ class StrideConvWrapper(nn.Module):
     def __init__(self,channels,PAR):
         super(StrideConvWrapper,self).__init__()
         
-        self.pool=nn.Conv3d(channels, channels, PAR['DownConvKernel'],stride=PAR['PoolShape'])
+        self.pool=nn.Conv3d(channels, channels, PAR['DownConvKernel'],stride=PAR['PoolShape'],padding=FindPad(PAR['TransposeSize']))
     def forward(self,input):
         return self.pool(input)
 

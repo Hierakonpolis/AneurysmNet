@@ -31,15 +31,15 @@ DEF_PARAMS['DiceWeight']=1
 DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
-DEF_PARAMS['SobelWeight']=1
-DEF_PARAMS['SurfaceLossWeight']=1
+DEF_PARAMS['SobelWeight']=0#1
+DEF_PARAMS['SurfaceLossWeight']=0#1
             
 dataroot='/media/Olowoo/ADAM_eqpatch'
-datafile='databox[64 64 64].p'
+datafile='databox[32 32 32].p'
 saveroot='/tmp/ss'
 name='U_677_res'
 
-dataroot='/scratch/project_2003143/patches64_resized'
+dataroot='/scratch/project_2003143/patches32'
 saveroot='/projappl/project_2003143'
 fold=0
 

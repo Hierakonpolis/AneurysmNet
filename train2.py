@@ -20,7 +20,7 @@ DEF_PARAMS['ResidualConnections']=True
 DEF_PARAMS['PoolShape']=2
 # DEF_PARAMS['BNorm']=nn.BatchNorm3d
 # DEF_PARAMS['Conv']=nn.Conv3d
-# DEF_PARAMS['Downsample']=PoolWrapper
+DEF_PARAMS['Downsample']=N.StrideConvWrapper
 # DEF_PARAMS['Upsample']=TransposeWrapper
 DEF_PARAMS['InterpMode']='trilinear'
 DEF_PARAMS['DownConvKernel']=3
@@ -32,7 +32,6 @@ DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 DEF_PARAMS['SobelWeight']=0
-DEF_PARAMS['VolLossWeight']=1
 DEF_PARAMS['SurfaceLossWeight']=0
             
 dataroot='/media/Olowoo/ADAM_eqpatch'
