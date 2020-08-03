@@ -10,9 +10,9 @@ import dataset as D
 from sklearn.model_selection import train_test_split
 
 DEF_PARAMS['FilterSize']=3
-DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
+DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64, 64])
+DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64, 64])
+DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64, 64])
 DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
 DEF_PARAMS['InblockSkip']=False
@@ -28,17 +28,21 @@ DEF_PARAMS['Weights']=(0.001,1,0.5)
 DEF_PARAMS['SideBranchWeight']=0.1
 DEF_PARAMS['CCEweight']=1
 DEF_PARAMS['DiceWeight']=1
-DEF_PARAMS['WDecay']=0.01
+DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
-
+DEF_PARAMS['SobelWeight']=0#
+DEF_PARAMS['SurfaceLossWeight']=0
+            
 dataroot='/media/Olowoo/ADAM_eqpatch'
-datafile='databox[64 64 64].p'
-saveroot='/media/Olowoo/ADAMsaves/'
-name='U_Net_Final_res'
+datafile='databox[32 32 32].p'
+saveroot='/tmp/ss'
+name='U_677_res'
 
-dataroot='/scratch/project_2003143/patches64_resized'
+dataroot='/scratch/project_2003143/patches32'
 saveroot='/projappl/project_2003143'
+fold=0
+
 if len(sys.argv)>1:
     dataroot=sys.argv[1]
     name=sys.argv[2]
@@ -67,12 +71,11 @@ Patience=np.inf
 MaxTime=np.inf
 
 tensor=D.ToTensor(order={'HD':3,'labels':0,'LD':3})
-Flip=D.Flip(order={'HD':3,'labels':0,'LD':3})
 
-transforms = torchvision.transforms.Compose([Flip,tensor])
+transforms= torchvision.transforms.Compose([tensor])
 
-trainset = D.PatchesDataset(dataroot, datafile,transforms,fold,False)
-testset = D.PatchesDataset(dataroot, datafile,transforms,fold,True)
+trainset=D.PatchesDataset(dataroot, datafile,transforms,fold,False)
+testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True)
 
 
 

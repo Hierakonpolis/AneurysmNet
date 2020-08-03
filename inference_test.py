@@ -60,11 +60,21 @@ transforms= torchvision.transforms.Compose([tensor])
 
 base='/media/Olowoo/ADAMsaves/Unet'
 second=['2C','_Dec_0001','_Dec_005','DecRes001','_DW','_Inf_0','_Inf_dec001','_LF','_Resized','DR']
-second=['SurfLoss','Sobel']
+second=['SurfLoss','Sobel','AllDR']
 third=['_bes_dice.pth','_best.pth','_prog.pth']
 dices=pickle.load(open('/media/Olowoo/ADAMsaves/saveres.p','rb'))
 Prehreshold=[True,False]
 results={}
+
+# UnetDRV resized
+#AllLosses resized
+# AllDR resized
+# Simp resized
+# Unet32 original
+# UnetInterpRes resized
+# UnetStrideRes resized
+
+
 
 
 for net in second:
