@@ -60,7 +60,7 @@ transforms= torchvision.transforms.Compose([tensor])
 
 base='/media/Olowoo/ADAMsaves/Unet'
 second=['2C','_Dec_0001','_Dec_005','DecRes001','_DW','_Inf_0','_Inf_dec001','_LF','_Resized','DR']
-second=['SurfLoss','Sobel','AllDR']
+second=['AllLosses','DRV']
 third=['_bes_dice.pth','_best.pth','_prog.pth']
 dices=pickle.load(open('/media/Olowoo/ADAMsaves/saveres.p','rb'))
 Prehreshold=[True,False]
@@ -86,6 +86,10 @@ for net in second:
                 modeltype=N.U_Net_DR
             else:
                 modeltype=N.U_Net
+            if '32' in file:
+                BS=32
+            else:
+                BS=64
             
             Model=Segmentation(modeltype,
                             savefile=save,
@@ -115,7 +119,7 @@ for net in second:
                 #     TOF=TOF+addy
                 #     STR=STR+addy
                 #     REF=REF+addy
-                dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms)
+                dataset=D.OneVolPatchSet(S+TOF,S+STR,transforms,box_size=BS)
             
                 trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
             

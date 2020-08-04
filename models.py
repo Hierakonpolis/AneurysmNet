@@ -225,6 +225,7 @@ class Segmentation():
             print('Training set running mean loss: ',trainloss,flush=True)
             
             testloss, dice = self.test(test_dataloader)
+            test_dataloader.dataset.scamblenegs()
             print('Test set loss: ',testloss,flush=True)
             self.opt['TotalTime'] += time.time()-start
             

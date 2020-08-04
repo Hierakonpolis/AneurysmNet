@@ -57,7 +57,7 @@ def AddSampleFilePaths(folder,foldersdict):
 
 
 class OneVolPatchSet(Dataset):
-    def __init__(self,volumepath,anatomy,transforms=None,Labels=None):
+    def __init__(self,volumepath,anatomy,transforms=None,Labels=None,box_size=64):
         
         if type(volumepath) == str:
             v=nib.load(volumepath).get_fdata()
@@ -65,9 +65,10 @@ class OneVolPatchSet(Dataset):
         elif type(volumepath) == nib.nifti1.Nifti1Image:
             v=volumepath.get_fdata()
             a=anatomy.get_fdata()
+        self.locations=potential_aneurysm(self.vol,box_size=box_size)
         self.vol=normalize(v)
         self.anatomy=normalize(a)
-        self.locations=potential_aneurysm(self.vol)
+        
         self.GetLabels=Labels
         if type(Labels) == str:
             self.GT=nib.load(Labels).get_fdata()
@@ -588,36 +589,37 @@ class PatchesDataset(Dataset):
             for idx, k in enumerate(self.dataset):
                 if k['positive']:
                     self.PosIDX.append(idx)
+                    # print('pos')
                 else:
+                    # print('neg')
                     self.NegIDX.append(idx)
                     
             
         else:
             self.NewMode=False
-                
+        
+        self.scamblenegs()
     def scamblenegs(self):
         if self.NewMode:
+            # print(self.NegIDX)
             S=int(len(self.PosIDX)*self.NegRatio)
             negs=np.random.choice(self.NegIDX,size=S,replace=False)
             negs=list(negs)
             self.indexes=self.PosIDX+negs
+            self.thisepoch=[self.dataset[x] for x in self.indexes]
+        else:
+            self.thisepoch=self.dataset
             
                 
     def __len__(self):
-        if self.NewMode: return len(self.indexes)
-        
-        return len(self.dataset)
+        return len(self.thisepoch)
     
-    def __getitem__(self,I):
+    def __getitem__(self,idx):
         #print(self.dataset[idx])
         #print(idx)
         #print(self.path)
-        if self.NewMode: 
-            idx = self.indexes(I)
-        else:
-            idx = I
             
-        sample=AddPatch(self.dataset[idx],self.path,self.Categories)
+        sample=AddPatch(self.thisepoch[idx],self.path,self.Categories)
         
         if self.transforms:
             sample=self.transforms(sample)

@@ -593,7 +593,7 @@ def run_tests(box_size, accuracy, neighbours, pix_close, directory):
 
 # You can check the functions commentations for the parameters.
 # run_tests(64, 0.001, False, 10, '/media/Olowoo/ADAM_release_subjs')
-# run_tests(64, 0.005, False, 10, '/media/Olowoo/ADAM_release_subjs')
+# run_tests(32, 0.005, False, 10, '/media/Olowoo/ADAM_release_subjs')
 
 # percs=[0.002,0.001,0.0005,0.0001]
 # dist=[5,10,15,20]
