@@ -36,10 +36,10 @@ class SurfaceLoss():
         # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
         self.idc = classs
 
-    def __call__(self, probs, dist_maps):
+    def __call__(self, probs, ground_truth):
 
         pc = probs[:, self.idc, ...].type(torch.cuda.FloatTensor)
-        dc = dist_maps[:, self.idc, ...].type(torch.cuda.FloatTensor)
+        dc = ground_truth[:, self.idc, ...].type(torch.cuda.FloatTensor)
 
         multipled = torch.einsum("bcwh,bcwh->bcwh", pc, dc)
 
