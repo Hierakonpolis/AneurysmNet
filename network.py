@@ -324,7 +324,7 @@ def Upsize(chanvol,volvol):
 
 class CNN(nn.Module):
     
-    def __init(self,PARAMS=DEF_PARAMS):
+    def __init__(self,PARAMS=DEF_PARAMS):
         super(CNN,self).__init__()
         self.PARAMS=PARAMS
         self.HDpath=nn.ModuleDict()
