@@ -322,6 +322,58 @@ def Upsize(chanvol,volvol):
     return (chansize[0],chansize[1],volsize[2],volsize[3],volsize[4])
     
 
+class CNN(nn.Module):
+    
+    def __init(self,PARAMS=DEF_PARAMS):
+        super(CNN,self).__init__()
+        self.PARAMS=PARAMS
+        self.HDpath=nn.ModuleDict()
+        self.LDpath=nn.ModuleDict()
+        self.exitph=nn.ModuleDict()
+        if PARAMS['InblockSkip']:
+            ConvBlock=SkipConvBlock
+        else:
+            ConvBlock=NoSkipConvBlock
+        
+        self.HDpath[0]=ConvBlock(2,PARAMS['FiltersNumHighRes'][0],PAR=PARAMS,Inplace=True)
+        self.LDpath[0]=ConvBlock(2,PARAMS['FiltersNumLowhRes'][0],PAR=PARAMS,Inplace=True)
+        i=0
+        for i in range(1,len(PARAMS['FiltersNumHighRes'])):
+            self.HDpath[i]=ConvBlock(PARAMS['FiltersNumHighRes'][i-1],PARAMS['FiltersNumHighRes'][i],PAR=PARAMS,Inplace=True)
+            
+        for i in range(1,len(PARAMS['FiltersNumLowRes'])):
+            self.LDpath[i]=ConvBlock(PARAMS['FiltersNumLowRes'][i-1],PARAMS['FiltersNumLowRes'][i],PAR=PARAMS,Inplace=True)
+        
+        self.exitph[0]=ConvBlock(PARAMS['FiltersNumLowRes'][i]+PARAMS['FiltersNumHighRes'][i],PARAMS['FiltersDecoder'],PAR=PARAMS,Inplace=True)
+        
+        for i in range(1,len(PARAMS['FiltersDecoder'])):
+            self.exitph[i]=ConvBlock(PARAMS['FiltersDecoder'][i-1],PARAMS['FiltersDecoder'],PAR=PARAMS,Inplace=True)
+        
+        self.Classifier=PARAMS['Conv'](PARAMS['FiltersDecoder'][0],PARAMS['Categories'],1) #classifier layer
+        self.softmax=nn.Softmax(dim=1)
+    
+    def forward(self,MRI_high,MRI_low):
+        
+        H=self.HDpath[0](MRI_high.cuda())
+        for i in range(1,len(self.PARAMS['FiltersNumHighRes'])):
+            H=self.HDpath[i](H)
+        
+        L=self.LDpath[0](MRI_low.cuda())
+        for i in range(1,len(self.PARAMS['FiltersNumLowRes'])):
+            L=self.LDpath[i](L)
+        
+        X=torch.cat([H,L],dim=1)
+        X=self.exitph[0](X)
+        
+        for i in range(1,len(self.PARAMS['FiltersDecoder'])):
+            X=self.exitph[i](X)
+            
+        X=self.Classifier(X)
+        X=self.softmax(X)
+        
+        return X
+
+
         
 class U_Net_Like(nn.Module):
     """
@@ -722,7 +774,7 @@ class U_Net_Single(nn.Module):
         for i in range(1,len(self.PARAMS['FiltersNumHighRes'])):
             
             denseA[i] = self.encoder['PoolHigh'+str(i)](denseA[i-1])
-            print('1',i)
+            # print('1',i)
             denseA[i] = self.encoder['DenseHigh'+str(i)](denseA[i])
         
         

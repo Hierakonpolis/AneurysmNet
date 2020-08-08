@@ -15,7 +15,7 @@ DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
 DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
 DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
-DEF_PARAMS['InblockSkip']=False
+DEF_PARAMS['InblockSkip']=True
 DEF_PARAMS['ResidualConnections']=True
 DEF_PARAMS['PoolShape']=2
 # DEF_PARAMS['BNorm']=nn.BatchNorm3d
@@ -32,14 +32,14 @@ DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 DEF_PARAMS['SobelWeight']=0#1
-DEF_PARAMS['SurfaceLossWeight']=0#1
+DEF_PARAMS['SurfaceLossWeight']=1
             
 dataroot='/media/Olowoo/ADAM_eqpatch'
-datafile='databox[32 32 32].p'
+datafile='databox[64 64 64].p'
 saveroot='/tmp/ss'
-name='U_677_res'
+name='U_6_res'
 
-dataroot='/scratch/project_2003143/patches32'
+dataroot='/scratch/project_2003143/patches64_resized'
 saveroot='/projappl/project_2003143'
 fold=0
 
@@ -80,7 +80,7 @@ testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True)
 
 
 if os.path.isfile(saveprogress):
-    Model=Segmentation(N.U_Net,
+    Model=Segmentation(N.CNN,
                    savefile=saveprogress,
                    parameters=DEF_PARAMS,
                    testset=None)
@@ -91,7 +91,7 @@ else:
 # rot=D.Rotate(5, probability=0.5,order={'sample':3,'labels':0})
 # norm=D.Normalize(order={'sample':3,'labels':0})
 
-    Model=Segmentation(N.U_Net,
+    Model=Segmentation(N.CNN,
                        savefile=None,
                        parameters=DEF_PARAMS,
                        testset=fold)

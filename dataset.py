@@ -65,8 +65,9 @@ class OneVolPatchSet(Dataset):
         elif type(volumepath) == nib.nifti1.Nifti1Image:
             v=volumepath.get_fdata()
             a=anatomy.get_fdata()
-        self.locations=potential_aneurysm(self.vol,box_size=box_size)
+        
         self.vol=normalize(v)
+        self.locations=potential_aneurysm(self.vol,box_size=box_size)
         self.anatomy=normalize(a)
         
         self.GetLabels=Labels

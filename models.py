@@ -292,7 +292,7 @@ class Segmentation():
             for K in np.split(locations[k], locations[k].shape[0],axis=0):
                 centerpoints.append(K.reshape(3).astype(int))
                 
-        
+        # return patches, centerpoints
         res=Rebuild(inputloader.dataset.vol, patches, centerpoints)
         
         if FinalThreshold:
