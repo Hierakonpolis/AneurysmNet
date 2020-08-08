@@ -10,8 +10,8 @@ import dataset as D
 from sklearn.model_selection import train_test_split
 
 DEF_PARAMS['FilterSize']=3
-DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
-DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
+DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64])
+DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64])
 DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
 DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
@@ -64,7 +64,7 @@ savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
-Bsize=8
+Bsize=6
 workers=19
 MaxEpochs=np.inf
 Patience=np.inf
