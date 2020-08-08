@@ -335,43 +335,43 @@ class CNN(nn.Module):
         else:
             ConvBlock=NoSkipConvBlock
         
-        self.HDpath[0]=ConvBlock(2,PARAMS['FiltersNumHighRes'][0],PAR=PARAMS,Inplace=True)
-        self.LDpath[0]=ConvBlock(2,PARAMS['FiltersNumLowhRes'][0],PAR=PARAMS,Inplace=True)
+        self.HDpath[str(0)]=ConvBlock(2,PARAMS['FiltersNumHighRes'][0],PAR=PARAMS,Inplace=True)
+        self.HDpath[str(0)]=ConvBlock(2,PARAMS['FiltersNumLowRes'][0],PAR=PARAMS,Inplace=True)
         i=0
         for i in range(1,len(PARAMS['FiltersNumHighRes'])):
-            self.HDpath[i]=ConvBlock(PARAMS['FiltersNumHighRes'][i-1],PARAMS['FiltersNumHighRes'][i],PAR=PARAMS,Inplace=True)
+            self.HDpath[str(i)]=ConvBlock(PARAMS['FiltersNumHighRes'][i-1],PARAMS['FiltersNumHighRes'][i],PAR=PARAMS,Inplace=True)
             
         for i in range(1,len(PARAMS['FiltersNumLowRes'])):
-            self.LDpath[i]=ConvBlock(PARAMS['FiltersNumLowRes'][i-1],PARAMS['FiltersNumLowRes'][i],PAR=PARAMS,Inplace=True)
+            self.HDpath[str(i)]=ConvBlock(PARAMS['FiltersNumLowRes'][i-1],PARAMS['FiltersNumLowRes'][i],PAR=PARAMS,Inplace=True)
         
-        self.exitph[0]=ConvBlock(PARAMS['FiltersNumLowRes'][i]+PARAMS['FiltersNumHighRes'][i],PARAMS['FiltersDecoder'],PAR=PARAMS,Inplace=True)
+        self.exitph[str(0)]=ConvBlock(PARAMS['FiltersNumLowRes'][i]+PARAMS['FiltersNumHighRes'][i],PARAMS['FiltersDecoder'][0],PAR=PARAMS,Inplace=True)
         
         for i in range(1,len(PARAMS['FiltersDecoder'])):
-            self.exitph[i]=ConvBlock(PARAMS['FiltersDecoder'][i-1],PARAMS['FiltersDecoder'],PAR=PARAMS,Inplace=True)
+            self.exitph[str(i)]=ConvBlock(PARAMS['FiltersDecoder'][i-1],PARAMS['FiltersDecoder'][i],PAR=PARAMS,Inplace=True)
         
-        self.Classifier=PARAMS['Conv'](PARAMS['FiltersDecoder'][0],PARAMS['Categories'],1) #classifier layer
+        self.Classifier=PARAMS['Conv'](PARAMS['FiltersDecoder'][i],PARAMS['Categories'],1) #classifier layer
         self.softmax=nn.Softmax(dim=1)
     
     def forward(self,MRI_high,MRI_low):
         
-        H=self.HDpath[0](MRI_high.cuda())
+        H=self.HDpath[str(0)](MRI_high.cuda())
         for i in range(1,len(self.PARAMS['FiltersNumHighRes'])):
-            H=self.HDpath[i](H)
+            H=self.HDpath[str(i)](H)
         
-        L=self.LDpath[0](MRI_low.cuda())
+        L=self.HDpath[str(0)](MRI_low.cuda())
         for i in range(1,len(self.PARAMS['FiltersNumLowRes'])):
-            L=self.LDpath[i](L)
+            L=self.HDpath[str(i)](L)
         
         X=torch.cat([H,L],dim=1)
-        X=self.exitph[0](X)
+        X=self.exitph[str(0)](X)
         
         for i in range(1,len(self.PARAMS['FiltersDecoder'])):
-            X=self.exitph[i](X)
+            X=self.exitph[str(i)](X)
             
         X=self.Classifier(X)
         X=self.softmax(X)
         
-        return X
+        return [], X
 
 
         
