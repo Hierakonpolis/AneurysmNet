@@ -35,7 +35,7 @@ DEF_PARAMS['SobelWeight']=0#
 DEF_PARAMS['SurfaceLossWeight']=0
             
 dataroot='/media/Olowoo/ADAM_eqpatch'
-datafile='databox[32 32 32].p'
+datafile='databox[64 64 64].p'
 saveroot='/tmp/ss'
 name='U_677_res'
 

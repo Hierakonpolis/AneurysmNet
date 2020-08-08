@@ -39,8 +39,8 @@ datafile='databox[64 64 64].p'
 saveroot='/tmp/ss'
 name='U_677_res'
 
-# dataroot='/scratch/project_2003143/patches64_resized_new'
-# saveroot='/projappl/project_2003143'
+dataroot='/scratch/project_2003143/patches64_resized_new'
+saveroot='/projappl/project_2003143'
 fold=0
 NG=0.2
 
