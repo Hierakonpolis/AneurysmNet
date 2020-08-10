@@ -14,14 +14,17 @@ from dataset import Rebuild
 
 EPS=1e-10
 
-def DiceLoss(Ytrue,Ypred):
-
-    DICE = -torch.div( torch.sum(torch.mul(torch.mul(Ytrue,Ypred),2)),
-                      torch.sum(torch.mul(Ypred,Ypred)) + torch.sum(torch.mul(Ytrue,Ytrue))+1)
+def DiceLoss(Ytrue,Ypred,CatW):
     
+    shape=Ytrue.shape
+    W=torch.tensor(CatW).reshape((1,len(CatW),1,1,1)).expand(shape).float()
+    DICE = -2*torch.div( torch.sum( W*torch.mul(Ytrue,Ypred)),
+                      torch.sum( W*(Ytrue+Ypred)) +1)
+    # torch.mul(Ypred,Ypred)) + torch.sum(torch.mul(Ytrue,Ytrue))
     return DICE
 
 def Dice(labels,Ypred):
+    
     
     labels [np.where(labels == np.amax(labels,axis=1))] = 1
     labels[labels!=1]=0
@@ -245,12 +248,12 @@ class Segmentation():
     def loss(self,sidebranches,output,GT):
         
         GT=GT.to(self.opt['device'])
-        loss=DiceLoss(GT,output) \
+        loss=DiceLoss(GT,output,self.opt['PAR']['Weights']) \
             + self.opt['PAR']['CCEweight']*CCE(GT, output, self.opt['PAR']['Weights'],SobW=self.opt['PAR']['SobelWeight']) \
             + self.opt['PAR']['SurfaceLossWeight']*SL(output,GT)
         
         for x in sidebranches:
-            loss+=(DiceLoss(GT,x) \
+            loss+=(DiceLoss(GT,x,self.opt['PAR']['Weights']) \
                 + self.opt['PAR']['CCEweight']*CCE(GT, x, self.opt['PAR']['Weights'],SobW=self.opt['PAR']['SobelWeight']))*self.opt['PAR']['SideBranchWeight'] \
                 + self.opt['PAR']['SurfaceLossWeight']*SL(output,GT)*self.opt['PAR']['SideBranchWeight']
         return loss
