@@ -33,7 +33,6 @@ DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 DEF_PARAMS['SobelWeight']=0#1
 DEF_PARAMS['SurfaceLossWeight']=1
-DEF_PARAMS
 
 dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'
