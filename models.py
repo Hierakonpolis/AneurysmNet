@@ -21,6 +21,30 @@ def DiceLoss(Ytrue,Ypred):
     
     return DICE
 
+class GeneralizedDice():
+    def __init__(self, classs=(0,1)):
+        # Self.idc is used to filter out some classes of the target mask. Use fancy indexing
+        self.idc = classs
+
+    def __call__(self, probs, target):
+        
+        
+
+        pc = probs[:, self.idc, ...].type(torch.cuda.FloatTensor)
+        tc = target[:, self.idc, ...].type(torch.cuda.FloatTensor)
+
+        
+        w = 1 / ((torch.einsum("bcdwh->bc", tc).type(torch.cuda.FloatTensor) + 1e-10) ** 2)
+        intersection = w * torch.einsum("bcdwh,bcdwh->bc", pc, tc)
+        union = w * (torch.einsum("bcdwh->bc", pc) + torch.einsum("bcdwh->bc", tc))
+
+        divided = 1 - 2 * (torch.einsum("bc->b", intersection) + 1e-10) / (torch.einsum("bc->b", union) + 1e-10)
+
+        loss = divided.mean()
+
+        return loss
+
+
 def Dice(labels,Ypred):
     
     labels [np.where(labels == np.amax(labels,axis=1))] = 1
@@ -47,6 +71,9 @@ class SurfaceLoss():
 
         return loss
 SL=SurfaceLoss()
+GD=GeneralizedDice()
+# def GD(a,b):
+#     return 0
 
 Z1=torch.tensor([[[ 1,  1, 1],
                      [ 1,  2, 1],
@@ -247,7 +274,8 @@ class Segmentation():
         GT=GT.to(self.opt['device'])
         loss=DiceLoss(GT,output) \
             + self.opt['PAR']['CCEweight']*CCE(GT, output, self.opt['PAR']['Weights'],SobW=self.opt['PAR']['SobelWeight']) \
-            + self.opt['PAR']['SurfaceLossWeight']*SL(output,GT)
+            + self.opt['PAR']['SurfaceLossWeight']*SL(output,GT) \
+            + self.opt['PAR']['GenDiceWeight']*GD(output,GT)
         
         for x in sidebranches:
             loss+=(DiceLoss(GT,x) \

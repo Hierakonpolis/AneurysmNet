@@ -10,8 +10,8 @@ import dataset as D
 from sklearn.model_selection import train_test_split
 
 DEF_PARAMS['FilterSize']=3
-DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64])
-DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64])
+DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
+DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
 DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
 DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
@@ -27,13 +27,13 @@ DEF_PARAMS['DownConvKernel']=3
 DEF_PARAMS['Weights']=(0.001,1,0.5)
 DEF_PARAMS['SideBranchWeight']=0.1
 DEF_PARAMS['CCEweight']=1
-DEF_PARAMS['DiceWeight']=1
+DEF_PARAMS['DiceWeight']=0
 DEF_PARAMS['WDecay']=0
 DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 DEF_PARAMS['SobelWeight']=0#1
 DEF_PARAMS['SurfaceLossWeight']=1
-DEF_PARAMS
+DEF_PARAMS['GenDiceWeight']=1
 
 dataroot='/media/Olowoo/ADAM_eqpatch'
 datafile='databox[64 64 64].p'
@@ -65,7 +65,7 @@ savebest=os.path.join(saveroot,name+'_best.pth')
 torch.set_default_tensor_type('torch.cuda.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
 testsize=0.05
-Bsize=6
+Bsize=8
 workers=19
 MaxEpochs=np.inf
 Patience=np.inf
@@ -81,7 +81,7 @@ testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True)
 
 
 if os.path.isfile(saveprogress):
-    Model=Segmentation(N.CNN,
+    Model=Segmentation(N.U_Net,
                    savefile=saveprogress,
                    parameters=DEF_PARAMS,
                    testset=None)
@@ -92,7 +92,7 @@ else:
 # rot=D.Rotate(5, probability=0.5,order={'sample':3,'labels':0})
 # norm=D.Normalize(order={'sample':3,'labels':0})
 
-    Model=Segmentation(N.CNN,
+    Model=Segmentation(N.U_Net,
                        savefile=None,
                        parameters=DEF_PARAMS,
                        testset=fold)
