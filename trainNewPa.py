@@ -77,8 +77,8 @@ tensor=D.ToTensor(order={'HD':3,'labels':0,'LD':3})
 
 transforms= torchvision.transforms.Compose([tensor])
 
-trainset=D.PatchesDataset(dataroot, datafile,transforms,fold,False,NegRatio=NG)
-testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True,NegRatio=NG)
+trainset=D.PatchesDataset(dataroot, datafile,transforms,fold,False,DEF_PARAMS['Categories'],NegRatio=NG)
+testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True,DEF_PARAMS['Categories'],NegRatio=NG)
 
 
 
