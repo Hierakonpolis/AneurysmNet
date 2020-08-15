@@ -13,7 +13,7 @@ DEF_PARAMS['FilterSize']=3
 DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
 DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
 DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
-DEF_PARAMS['Categories']=int(3)
+DEF_PARAMS['Categories']=int(2)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
 DEF_PARAMS['InblockSkip']=False
 DEF_PARAMS['ResidualConnections']=True
@@ -33,6 +33,7 @@ DEF_PARAMS['TransposeSize']=4
 DEF_PARAMS['TransposeStride']=2
 DEF_PARAMS['SobelWeight']=0#1
 DEF_PARAMS['SurfaceLossWeight']=1
+DEF_PARAMS['GenDiceWeight']=1
             
 dataroot='/media/Olowoo/patches64_new'
 datafile='databox[64 64 64].p'
