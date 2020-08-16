@@ -504,12 +504,15 @@ def InResizer(TOFp,MRIp,xysize=0.35714287,zsize=0.5):
         outs.append(newnii)
     return outs,OrigSize
 
-def OutResizer(vol,OrigSize,ResizedTOF,order=0):
-    OrigSize
+def OutResizer(vol,OrigSize,ResizedTOF,order=3,threshold=0.5):
+    
     H=ResizedTOF.header
     ResizedSize=np.array((H['pixdim'][1],H['pixdim'][2],H['pixdim'][3])) 
     shapefactor=ResizedSize/OrigSize
     newvol=zoom(vol,shapefactor,order=order)
+    if threshold:
+        newvol[newvol>threshold]=1
+        newvol[newvol<1]=0
     H['dim'][1]=newvol.shape[0]
     H['dim'][2]=newvol.shape[1]
     H['dim'][3]=newvol.shape[2]
