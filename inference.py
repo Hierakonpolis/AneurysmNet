@@ -40,7 +40,7 @@ intof='TOF.nii.gz'
 inmri='struct_aligned.nii.gz'
 outfile='test.nii.gz'
 IN='/input'
-outfile='/output/aneurysms.nii.gz'
+outfile='/output/result.nii.gz'
 
 # outfile='/home/cat/AneurysmNet/test.nii.gz'
 # IN='/media/Olowoo/ADAM_release_subjs/10072F'
