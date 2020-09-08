@@ -29,21 +29,21 @@ allnets=[['UnetRI0', 0.6049110487714825, 0.1],
 
 torch.set_default_tensor_type('torch.FloatTensor') # t
 torch.backends.cudnn.benchmark = True
-Bsize=1
-workers=0#20
+Bsize=4
+workers=23
 
 tensor=D.ToTensor(order={'HD':3,'LD':3})
 transforms= torchvision.transforms.Compose([tensor])
 I=0
 
-intof='TOF.nii.gz'
-inmri='struct_aligned.nii.gz'
-outfile='test.nii.gz'
-IN='/input'
-outfile='/output/aneurysms.nii.gz'
+# intof='TOF.nii.gz'
+# inmri='struct_aligned.nii.gz'
+# outfile='test.nii.gz'
+# IN='/input'
+# outfile='/output/aneurysms.nii.gz'
 
-# outfile='/home/cat/AneurysmNet/test.nii.gz'
-# IN='/media/Olowoo/ADAM_release_subjs/10072F'
+outfile='/home/cat/AneurysmNet/test.nii.gz'
+IN='/media/Olowoo/ADAM_release_subjs/10051F'
 
 intof=IN+'/pre/TOF.nii.gz'
 inmri=IN+'/pre/struct_aligned.nii.gz'
@@ -68,15 +68,12 @@ for net, W, T in allnets:
     
     dataset=D.OneVolPatchSet(TOFnii,MRInii,transforms)
     trainloader=torch.utils.data.DataLoader(dataset, batch_size=Bsize, num_workers=workers)
-    res=Model.inferece(trainloader,FinalThreshold=False,PreThreshold=True) ## CHECK THIS LINE LATER
+    res=Model.inferece(trainloader,FinalThreshold=False,PreThreshold=True)
     
     I=I+res*(0.5/T)*W
 
 I=I/TW
 
-
-# I[I>0.5]=1
-# I[I!=1 ]=0
 
 out=D.OutResizer(I,OrigSize,TOFnii,order=3,threshold=0.5)
 nib.save(out,outfile)
