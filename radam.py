@@ -1,5 +1,6 @@
 """
 Downloaded from official RAdam github May 29th 2020
+https://github.com/LiyuanLucasLiu/RAdam
 """
 
 import math

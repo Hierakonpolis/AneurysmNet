@@ -11,6 +11,11 @@ import numpy as np
 import torch, tqdm, time, os
 from dataset import Rebuild
 
+
+"""
+Wrapper for our models, to streamline training, loading, and similar operations
+"""
+
 EPS=1e-10
 
 def DiceLoss(Ytrue,Ypred):

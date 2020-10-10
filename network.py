@@ -7,6 +7,11 @@ import torch.nn as nn
 import numpy as np
 
 EPS=1e-10 # log offset to avoid log(0)
+
+"""
+Networks, modules and related functions
+"""
+
 class InterpWrapper(nn.Module):
     def __init__(self,in_channels,out_channels,PAR):
         super(InterpWrapper,self).__init__()
@@ -82,29 +87,6 @@ DEF_DEEPLAB={"modalities":4,
             'DiceWeight':1,
             'WDecay':0
             }
-
-DEF_yolo={'FilterSize':3,
-          'FiltersNumHighRes':np.array([8, 16, 32]),
-          'FiltersNumLowRes':np.array([16, 32, 64]),
-          'FiltersDecoder':np.array([16, 32, 64]),
-          'Categories':int(3), 
-          'Activation':nn.LeakyReLU, 
-          'InblockSkip':False,
-          'ResidualConnections':False,
-          'PoolShape':2,
-          'BNorm':nn.BatchNorm3d,
-          'Conv':nn.Conv3d,
-          'Downsample':PoolWrapper,
-          'Upsample':TransposeWrapper,
-          'InterpMode':'trilinear',
-          'DownConvKernel':3,
-          'WDecay':0.00,
-          'TransposeSize':4,
-          'TransposeStride':2,
-          'PositiveWeight':100,
-          'CoordsWeight':1
-          }
-# box da 48?
 
 def FindPad(FilterSize):
     """
@@ -324,6 +306,9 @@ def Upsize(chanvol,volvol):
     
 
 class CNN(nn.Module):
+    """
+    Basic CNN, one of the networks we used
+    """
     
     def __init__(self,PARAMS=DEF_PARAMS):
         super(CNN,self).__init__()
@@ -378,7 +363,9 @@ class CNN(nn.Module):
         
 class U_Net_Like(nn.Module):
     """
-    Network definition, based on unpooling
+    Network with side branches, generating intermediate outputs.
+    During preliminary experiments, this did not perform well.
+    Left the code in just in case.
     """
     
     def __init__(self,PARAMS=DEF_PARAMS):
@@ -489,114 +476,10 @@ class U_Net_Like(nn.Module):
         
         return side, Combine
 
-class U_Net(nn.Module):
-    """
-    Network definition, based on unpooling
-    """
-    
-    def __init__(self,PARAMS=DEF_PARAMS):
-        super(U_Net,self).__init__()
-        self.PARAMS=PARAMS
-        
-        assert len(PARAMS['FiltersNumHighRes'])==len(PARAMS['FiltersNumLowRes'])
-        assert len(PARAMS['FiltersDecoder'])==len(PARAMS['FiltersNumLowRes'])
-        
-        if PARAMS['InblockSkip']:
-            ConvBlock=SkipConvBlock
-        else:
-            ConvBlock=NoSkipConvBlock
-        
-        self.encoder=nn.ModuleDict()
-        self.decoder=nn.ModuleDict()
-        
-        
-        self.encoder['DenseHigh'+str(0)]=ConvBlock(2,PARAMS['FiltersNumHighRes'][0],PAR=PARAMS)
-        self.encoder['DenseLow'+str(0)]=ConvBlock(2,PARAMS['FiltersNumLowRes'][0],PAR=PARAMS)
-        
-        # self.encoder['PoolHigh'+str(0)]=PARAMS['Downsample'](PARAMS['PoolShape'],return_indices=True)
-        # self.encoder['PoolLow'+str(0)]=PARAMS['Downsample'](PARAMS['PoolShape'],return_indices=True)
-        
-        for i in range(1,len(PARAMS['FiltersNumLowRes'])):
-            self.encoder['PoolHigh'+str(i)]=PARAMS['Downsample'](PARAMS['FiltersNumHighRes'][i-1],PAR=PARAMS)
-            self.encoder['PoolLow'+str(i)]=PARAMS['Downsample'](PARAMS['FiltersNumLowRes'][i-1],PAR=PARAMS)
-            
-            self.encoder['DenseHigh'+str(i)]=ConvBlock(PARAMS['FiltersNumHighRes'][i-1],PARAMS['FiltersNumHighRes'][i],PAR=PARAMS)
-            self.encoder['DenseLow'+str(i)]=ConvBlock(PARAMS['FiltersNumLowRes'][i-1],PARAMS['FiltersNumLowRes'][i],PAR=PARAMS)
-            
-            
-        
-        self.decoder['Dense'+str(i)]=ConvBlock(PARAMS['FiltersNumHighRes'][i]+PARAMS['FiltersNumLowRes'][i],
-                                              PARAMS['FiltersDecoder'][i],
-                                              PAR=PARAMS)
-        
-        
-        self.decoder['Up'+str(i)]=PARAMS['Upsample'](PARAMS['FiltersDecoder'][i],PARAMS['FiltersDecoder'][i],PAR=PARAMS)
-        
-        
-        
-        for i in reversed(range(1,len(PARAMS['FiltersDecoder'])-1)):
-            
-            self.decoder['Dense'+str(i)]=ConvBlock(PARAMS['FiltersNumHighRes'][i]+PARAMS['FiltersNumLowRes'][i]+PARAMS['FiltersDecoder'][i+1],
-                                              PARAMS['FiltersDecoder'][i],
-                                              PAR=PARAMS)
-            
-            
-            self.decoder['Up'+str(i)]=PARAMS['Upsample'](PARAMS['FiltersDecoder'][i],PARAMS['FiltersDecoder'][i],PAR=PARAMS)
-            
-            
-        
-        self.decoder['Dense'+str(0)]=ConvBlock(PARAMS['FiltersNumHighRes'][0]+PARAMS['FiltersNumLowRes'][0]+PARAMS['FiltersDecoder'][1],
-                                              PARAMS['FiltersDecoder'][0],
-                                              PAR=PARAMS)
-        
-        self.Classifier=PARAMS['Conv'](PARAMS['FiltersDecoder'][0],PARAMS['Categories'],1) #classifier layer
-        self.softmax=nn.Softmax(dim=1)
-        
-            
-            
-    def forward(self,MRI_high,MRI_low):
-        
-        denseA={}
-        denseB={}
-        decoder={}
-        Unpool={}
-        
-        denseA[0] = self.encoder['DenseHigh'+str(0)](MRI_high.cuda())
-        denseB[0] = self.encoder['DenseLow'+str(0)](MRI_low.cuda())
-        
-        
-        
-        for i in range(1,len(self.PARAMS['FiltersNumHighRes'])):
-            
-            denseA[i] = self.encoder['PoolHigh'+str(i)](denseA[i-1])
-            denseB[i] = self.encoder['PoolLow'+str(i)](denseB[i-1])
-            
-            denseA[i] = self.encoder['DenseHigh'+str(i)](denseA[i])
-            denseB[i] = self.encoder['DenseLow'+str(i)](denseB[i])
-        
-        
-        
-        cat=torch.cat([denseA[i],denseB[i]],dim=1)
-        decoder[i] = self.decoder['Dense'+str(i)](cat)
-        
-        Unpool[i]=self.decoder['Up'+str(i)](decoder[i],Upsize(decoder[i],denseA[i-1]))
-        
-        for i in reversed(range(1,len(self.PARAMS['FiltersNumHighRes'])-1)):
-            cat=torch.cat([denseA[i],denseB[i],Unpool[i+1]],dim=1)
-            decoder[i] = self.decoder['Dense'+str(i)](cat)
-            
-            Unpool[i]=self.decoder['Up'+str(i)](decoder[i],Upsize(decoder[i],denseA[i-1]))
-            
-        cat=torch.cat([denseA[0],denseB[0],Unpool[1]],dim=1)
-        decoder[0] = self.decoder['Dense'+str(0)](cat)
-        
-        out=self.softmax(self.Classifier(decoder[0]))
-        
-        return [], out
 
 class U_NetBN(nn.Module):
     """
-    Network definition, based on unpooling
+    This is the encored/decoder network we actually used.
     """
     
     def __init__(self,PARAMS=DEF_PARAMS):
@@ -701,7 +584,8 @@ class U_NetBN(nn.Module):
     
 class U_Net_Single(nn.Module):
     """
-    Network definition, based on unpooling
+    Network operating on the high resolution patch only.
+    Did not perform as well in preliminary experiments
     """
     
     def __init__(self,PARAMS=DEF_PARAMS):
@@ -795,7 +679,7 @@ class U_Net_Single(nn.Module):
 
 class U_Block(nn.Module):
     """
-    Network definition, based on unpooling
+    U-Net block, not used in final implementation
     """
     
     def __init__(self,inchannels,PARAMS=DEF_PARAMS):
@@ -884,7 +768,8 @@ class U_Block(nn.Module):
 
 class U_Net_double(nn.Module):
     """
-    Network definition, based on unpooling
+    Two stacked u-net-like modules. It did not help us
+    I know, the code for this file is terrible.
     """
     
     def __init__(self,PARAMS=DEF_PARAMS):
@@ -993,6 +878,9 @@ class U_Net_double(nn.Module):
         return [], out
 
 class CascadedDecoder(nn.Module):
+    """
+    Another experiment we discarded in preliminary tests
+    """
     def __init__(self,PARAMS):
         super(CascadedDecoder,self).__init__()
         

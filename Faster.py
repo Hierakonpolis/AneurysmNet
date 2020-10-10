@@ -10,6 +10,11 @@ import re
  
 np.set_printoptions(precision=2, suppress=True)
 
+"""
+These scripts are designed to extract a set of candidate positions based on
+voxel intensity
+"""
+
 def check_result(results, locations, box_size):
     """
     Checks if the received regions of interest contain the true aneurysms. Return true if all aneurysms found, false othervise. For testing purposes.
