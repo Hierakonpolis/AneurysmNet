@@ -576,13 +576,13 @@ def listdata(datafolder):
 
 class PatchesDataset(Dataset):
     def __init__(self,patchesroot,databoxfile,transforms=None, Testsbj=[],
-                 Test=False, Categories=3,NegRatio=0.7):
+                 Test=False, Categories=3,NegRatio=0.7,exclusions=[]):
         dataset=pickle.load(open(os.path.join(patchesroot,databoxfile),'rb'))
         self.NegRatio=NegRatio
         if Test:
-            self.dataset=[k for k in dataset if k['ID'] in Testsbj]
+            self.dataset=[k for k in dataset if ((k['ID'] in Testsbj) and (k['ID'] not in exclusions))]
         else:
-            self.dataset=[k for k in dataset if k['ID'] not in Testsbj]
+            self.dataset=[k for k in dataset if ((k['ID'] not in Testsbj) and (k['ID'] not in exclusions))]
         self.path=patchesroot
         self.transforms=transforms
         self.Categories=Categories
