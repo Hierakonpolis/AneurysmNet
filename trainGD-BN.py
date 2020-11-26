@@ -13,7 +13,7 @@ DEF_PARAMS['FilterSize']=3
 DEF_PARAMS['FiltersNumHighRes']=np.array([64, 64, 64])
 DEF_PARAMS['FiltersNumLowRes']=np.array([64, 64, 64])
 DEF_PARAMS['FiltersDecoder']=np.array([64, 64, 64])
-DEF_PARAMS['Categories']=int(2)
+DEF_PARAMS['Categories']=int(3)
 # DEF_PARAMS['Activation']=nn.LeakyReLU,
 DEF_PARAMS['InblockSkip']=True
 DEF_PARAMS['ResidualConnections']=True
@@ -75,8 +75,8 @@ tensor=D.ToTensor(order={'HD':3,'labels':0,'LD':3})
 
 transforms= torchvision.transforms.Compose([tensor])
 
-trainset=D.PatchesDataset(dataroot, datafile,transforms,fold,False, Categories=2)
-testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True, Categories=2)
+trainset=D.PatchesDataset(dataroot, datafile,transforms,fold,False)
+testset=D.PatchesDataset(dataroot, datafile,transforms,fold,True)
 
 
 
