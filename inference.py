@@ -62,7 +62,7 @@ for net, W, T in allnets:
     if 'CNN' in net:
         modtype=N.CNN
     else:
-        modtype=N.U_Net
+        modtype=N.U_NetBN
     print(net)
     TW+=W
     Model=Segmentation(modtype,
